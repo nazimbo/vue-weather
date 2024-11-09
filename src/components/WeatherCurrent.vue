@@ -6,7 +6,9 @@ const store = useWeatherStore();
 
 <template>
   <div v-if="store.weatherData" 
-       class="bg-white rounded-xl shadow-lg p-6 mb-8 transition-all duration-300">
+     class="backdrop-blur-md bg-white/30 rounded-xl p-6 mb-8 
+            transition-all duration-300 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]
+            border border-white/20">
     <div class="flex flex-col md:flex-row items-center justify-between gap-6">
       <!-- City and Temperature -->
       <div class="text-center md:text-left">

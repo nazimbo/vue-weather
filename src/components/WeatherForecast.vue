@@ -13,8 +13,12 @@ const store = useWeatherStore();
       <div 
         v-for="day in store.weatherData.forecast" 
         :key="day.date"
-        class="bg-white rounded-lg shadow-md p-4 transition-transform duration-300 
-               hover:transform hover:scale-105 hover:shadow-lg"
+        class="backdrop-blur-md bg-white/20 rounded-lg p-4 
+              border border-white/20
+              transition-all duration-300 
+              hover:transform hover:scale-105
+              hover:shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]
+              shadow-[0_8px_32px_0_rgba(31,38,135,0.17)]"
       >
         <div class="text-center">
           <p class="font-medium text-gray-600 mb-2">{{ day.date }}</p>
