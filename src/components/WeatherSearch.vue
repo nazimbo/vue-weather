@@ -6,7 +6,6 @@ const store = useWeatherStore();
 const searchQuery = ref('');
 const geoLocationError = ref<string | null>(null);
 
-// Clear expired cache entries on component mount
 onMounted(() => {
   store.clearExpiredCache();
 });
@@ -52,98 +51,41 @@ const handleGetLocation = async () => {
 </script>
 
 <template>
-  <div class="weather-search">
-    <div class="search-container">
+  <div class="mb-8">
+    <div class="max-w-xl mx-auto relative">
       <input
         v-model="searchQuery"
         type="text"
         placeholder="Enter city name..."
         @keyup.enter="handleSearch"
+        class="w-full px-4 py-3 pl-5 pr-32 rounded-lg bg-white shadow-md border border-gray-200 
+               focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent
+               placeholder-gray-400 text-gray-600"
       />
-      <button 
-        @click="handleSearch" 
-        :disabled="store.loading"
-        class="search-button"
-      >
-        {{ store.loading ? 'Searching...' : 'Search' }}
-      </button>
-      <button 
-        @click="handleGetLocation" 
-        :disabled="store.loading"
-        class="location-button"
-        title="Use my location"
-      >
-        📍
-      </button>
+      <div class="absolute right-2 top-2 flex gap-2">
+        <button 
+          @click="handleSearch"
+          :disabled="store.loading"
+          class="px-4 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
+                 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors
+                 flex items-center justify-center min-w-[100px]"
+        >
+          {{ store.loading ? 'Searching...' : 'Search' }}
+        </button>
+        <button 
+          @click="handleGetLocation"
+          :disabled="store.loading"
+          class="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
+                 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+          title="Use my location"
+        >
+          📍
+        </button>
+      </div>
     </div>
-    <p v-if="store.error" class="error">{{ store.error }}</p>
-    <p v-if="geoLocationError" class="error">{{ geoLocationError }}</p>
+    <div class="mt-3 text-center">
+      <p v-if="store.error" class="text-red-500 text-sm">{{ store.error }}</p>
+      <p v-if="geoLocationError" class="text-red-500 text-sm">{{ geoLocationError }}</p>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.weather-search {
-  margin: 2rem 0;
-}
-
-.search-container {
-  display: flex;
-  gap: 0.5rem;
-  max-width: 500px;
-  margin: 0 auto;
-}
-
-.search-container input {
-  flex: 1;
-  padding: 0.5rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.search-container input:focus {
-  outline: none;
-  border-color: #4CAF50;
-  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-}
-
-.search-container button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.search-container button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-.search-container .search-button {
-  background-color: #4CAF50;
-  color: white;
-  min-width: 100px;
-}
-
-.search-container .search-button:hover:not(:disabled) {
-  background-color: #45a049;
-}
-
-.search-container .location-button {
-  background-color: #2196F3;
-  color: white;
-  padding: 0.5rem;
-  font-size: 1.2rem;
-}
-
-.search-container .location-button:hover:not(:disabled) {
-  background-color: #1e88e5;
-}
-
-.error {
-  color: #ff4444;
-  margin-top: 1rem;
-  text-align: center;
-}
-</style>
