@@ -25,51 +25,51 @@ const store = useWeatherStore();
   </div>
 </template>
 
-<style scoped lang="scss">
+<style scoped>
 .weather-forecast {
   margin-top: 2rem;
   padding: 2rem;
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
 
-  h3 {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    color: #333;
-  }
+.weather-forecast h3 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
 
-  .forecast-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
+.forecast-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
 
-    .forecast-day {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1rem;
-      background-color: #f5f5f5;
-      border-radius: 4px;
+.forecast-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
 
-      .date {
-        font-weight: bold;
-        margin-bottom: 0.5rem;
-      }
+.forecast-day .date {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
 
-      .temp {
-        font-size: 1.25rem;
-        font-weight: bold;
-        margin: 0.5rem 0;
-      }
+.forecast-day .temp {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+}
 
-      .description {
-        text-align: center;
-        font-size: 0.875rem;
-        color: #666;
-        text-transform: capitalize;
-      }
-    }
-  }
+.forecast-day .description {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #666;
+  text-transform: capitalize;
 }
 </style>

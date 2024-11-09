@@ -76,69 +76,69 @@ const handleGetLocation = async () => {
   </div>
 </template>
 
-<style scoped lang="scss">
+<style scoped>
 .weather-search {
   margin: 2rem 0;
+}
 
-  .search-container {
-    display: flex;
-    gap: 0.5rem;
-    max-width: 500px;
-    margin: 0 auto;
+.search-container {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 500px;
+  margin: 0 auto;
+}
 
-    input {
-      flex: 1;
-      padding: 0.5rem 1rem;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 1rem;
+.search-container input {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
 
-      &:focus {
-        outline: none;
-        border-color: #4CAF50;
-        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-      }
-    }
+.search-container input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
 
-    button {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      
-      &:disabled {
-        background-color: #ccc;
-        cursor: not-allowed;
-      }
+.search-container button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
 
-      &.search-button {
-        background-color: #4CAF50;
-        color: white;
-        min-width: 100px;
+.search-container button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
 
-        &:hover:not(:disabled) {
-          background-color: #45a049;
-        }
-      }
+.search-container .search-button {
+  background-color: #4CAF50;
+  color: white;
+  min-width: 100px;
+}
 
-      &.location-button {
-        background-color: #2196F3;
-        color: white;
-        padding: 0.5rem;
-        font-size: 1.2rem;
+.search-container .search-button:hover:not(:disabled) {
+  background-color: #45a049;
+}
 
-        &:hover:not(:disabled) {
-          background-color: #1e88e5;
-        }
-      }
-    }
-  }
+.search-container .location-button {
+  background-color: #2196F3;
+  color: white;
+  padding: 0.5rem;
+  font-size: 1.2rem;
+}
 
-  .error {
-    color: #ff4444;
-    margin-top: 1rem;
-    text-align: center;
-  }
+.search-container .location-button:hover:not(:disabled) {
+  background-color: #1e88e5;
+}
+
+.error {
+  color: #ff4444;
+  margin-top: 1rem;
+  text-align: center;
 }
 </style>

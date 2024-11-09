@@ -13,16 +13,16 @@ import WeatherForecast from '../components/WeatherForecast.vue';
   </div>
 </template>
 
-<style scoped lang="scss">
+<style scoped>
 .home {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+}
 
-  h1 {
-    text-align: center;
-    color: #333;
-    margin-bottom: 2rem;
-  }
+.home h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 2rem;
 }
 </style>
