@@ -2,7 +2,6 @@
 import { ref, computed } from 'vue';
 import { useWeatherStore } from '../stores/weatherStore';
 import { useDebounceFn } from '@vueuse/core';
-import { WeatherErrorType } from '../types/weather';
 
 const store = useWeatherStore();
 const searchQuery = ref('');
