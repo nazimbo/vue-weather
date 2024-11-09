@@ -1,7 +1,13 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
 import { useThrottleFn } from '@vueuse/core';
-import type { WeatherState, WeatherData } from '../types/weather';
+import type { 
+  WeatherState, 
+  WeatherData, 
+  WeatherError,
+  CacheEntry  // Add this import
+} from '../types/weather';
+import { WeatherErrorType } from '../types/weather';
 
 const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
 const BASE_URL = import.meta.env.VITE_OPENWEATHER_BASE_URL;
@@ -15,11 +21,6 @@ interface WeatherParams {
   lon?: number;
 }
 
-interface CacheEntry {
-  data: WeatherData;
-  timestamp: number;
-}
-
 export const useWeatherStore = defineStore('weather', {
   state: (): WeatherState => ({
     weatherData: null,
@@ -30,6 +31,40 @@ export const useWeatherStore = defineStore('weather', {
   }),
 
   actions: {
+    handleError(error: unknown): WeatherError {
+      if (axios.isAxiosError(error)) {
+        if (!error.response) {
+          return {
+            type: WeatherErrorType.NETWORK,
+            message: 'Network error. Please check your connection.'
+          };
+        }
+        
+        switch (error.response.status) {
+          case 429:
+            return {
+              type: WeatherErrorType.API_LIMIT,
+              message: 'Too many requests. Please try again later.'
+            };
+          case 404:
+            return {
+              type: WeatherErrorType.LOCATION,
+              message: 'Location not found. Please check the city name.'
+            };
+          default:
+            return {
+              type: WeatherErrorType.UNKNOWN,
+              message: error.response.data?.message || 'An unexpected error occurred.'
+            };
+        }
+      }
+      
+      return {
+        type: WeatherErrorType.UNKNOWN,
+        message: error instanceof Error ? error.message : 'An unexpected error occurred.'
+      };
+    },
+
     getCacheKey(params: WeatherParams): string {
       return params.q || `${params.lat},${params.lon}`;
     },
@@ -95,7 +130,6 @@ export const useWeatherStore = defineStore('weather', {
       };
     },
 
-    // Rate limited version of fetchWeatherData
     throttledFetchWeatherData: useThrottleFn(
       async function(this: any, params: WeatherParams) {
         return this.fetchWeatherData(params);
@@ -105,7 +139,10 @@ export const useWeatherStore = defineStore('weather', {
 
     async fetchWeatherData(params: WeatherParams) {
       if (!API_KEY) {
-        this.error = 'API key not configured';
+        this.error = {
+          type: WeatherErrorType.UNKNOWN,
+          message: 'API key not configured'
+        };
         console.error('OpenWeatherMap API key is not configured');
         return;
       }
@@ -113,7 +150,6 @@ export const useWeatherStore = defineStore('weather', {
       const cacheKey = this.getCacheKey(params);
       const cached = this.cache.get(cacheKey);
 
-      // Return cached data if valid
       if (cached && this.isCacheValid(cached)) {
         this.weatherData = cached.data;
         this.error = null;
@@ -125,10 +161,8 @@ export const useWeatherStore = defineStore('weather', {
 
       try {
         const [currentWeather, forecast] = await this.makeWeatherRequests(params);
-        
         const processedData = this.processWeatherData(currentWeather, forecast);
         
-        // Update cache
         this.cache.set(cacheKey, {
           data: processedData,
           timestamp: Date.now(),
@@ -137,33 +171,12 @@ export const useWeatherStore = defineStore('weather', {
         this.weatherData = processedData;
         this.lastFetchTimestamp = Date.now();
       } catch (error) {
-        if (axios.isAxiosError(error)) {
-          this.error = error.response?.data?.message || 
-                      error.message || 
-                      'Failed to fetch weather data. Please try again.';
-          // Log detailed error information for debugging
-          console.error('Weather fetch error:', {
-            message: error.message,
-            response: error.response?.data,
-            status: error.response?.status,
-            config: {
-              url: error.config?.url,
-              method: error.config?.method,
-              params: error.config?.params
-            }
-          });
-        } else {
-          this.error = error instanceof Error ? 
-                      error.message : 
-                      'An unexpected error occurred';
-          console.error('Unexpected error:', error);
-        }
+        this.error = this.handleError(error);
       } finally {
         this.loading = false;
       }
     },
 
-    // Public methods
     async fetchWeather(city: string) {
       return this.throttledFetchWeatherData({ q: city });
     },
@@ -172,7 +185,6 @@ export const useWeatherStore = defineStore('weather', {
       return this.throttledFetchWeatherData({ lat, lon });
     },
 
-    // Cache management methods
     clearCache() {
       this.cache.clear();
     },

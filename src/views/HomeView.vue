@@ -1,7 +1,12 @@
 <script setup lang="ts">
+import { defineAsyncComponent } from 'vue';
 import WeatherSearch from '../components/WeatherSearch.vue';
 import WeatherCurrent from '../components/WeatherCurrent.vue';
-import WeatherForecast from '../components/WeatherForecast.vue';
+
+// Lazy load the forecast component
+const WeatherForecast = defineAsyncComponent(() =>
+  import('../components/WeatherForecast.vue')
+);
 </script>
 
 <template>
@@ -11,6 +16,13 @@ import WeatherForecast from '../components/WeatherForecast.vue';
     </h1>
     <WeatherSearch />
     <WeatherCurrent />
-    <WeatherForecast />
+    <Suspense>
+      <WeatherForecast />
+      <template #fallback>
+        <div class="text-center text-gray-600">
+          Loading forecast...
+        </div>
+      </template>
+    </Suspense>
   </div>
 </template>

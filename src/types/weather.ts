@@ -1,4 +1,3 @@
-// weather.ts
 export interface WeatherData {
   city: string;
   current: {
@@ -16,7 +15,21 @@ export interface WeatherData {
   }>;
 }
 
-interface CacheEntry {
+// New error handling types
+export enum WeatherErrorType {
+  NETWORK = 'NETWORK',
+  API_LIMIT = 'API_LIMIT',
+  LOCATION = 'LOCATION',
+  UNKNOWN = 'UNKNOWN'
+}
+
+export interface WeatherError {
+  type: WeatherErrorType;
+  message: string;
+}
+
+// Export CacheEntry interface
+export interface CacheEntry {
   data: WeatherData;
   timestamp: number;
 }
@@ -24,7 +37,7 @@ interface CacheEntry {
 export interface WeatherState {
   weatherData: WeatherData | null;
   loading: boolean;
-  error: string | null;
+  error: WeatherError | null;
   cache: Map<string, CacheEntry>;
   lastFetchTimestamp: number;
 }

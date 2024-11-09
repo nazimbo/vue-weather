@@ -1,20 +1,29 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { useWeatherStore } from '../stores/weatherStore';
+import { useDebounceFn } from '@vueuse/core';
+import { WeatherErrorType } from '../types/weather';
 
 const store = useWeatherStore();
 const searchQuery = ref('');
 const geoLocationError = ref<string | null>(null);
 
-onMounted(() => {
-  store.clearExpiredCache();
+const debouncedSearch = useDebounceFn(async (query: string) => {
+  if (query.trim()) {
+    await store.fetchWeather(query.trim());
+  }
+}, 500);
+
+const isLoading = computed(() => store.loading);
+const errorMessage = computed(() => {
+  if (store.error) {
+    return store.error.message;
+  }
+  return geoLocationError.value;
 });
 
-const handleSearch = async () => {
-  if (searchQuery.value.trim()) {
-    await store.fetchWeather(searchQuery.value.trim());
-    searchQuery.value = '';
-  }
+const handleSearch = () => {
+  debouncedSearch(searchQuery.value);
 };
 
 const handleGetLocation = async () => {
@@ -53,48 +62,64 @@ const handleGetLocation = async () => {
 <template>
   <div class="mb-8">
     <div class="max-w-xl mx-auto relative">
-      <!-- Search Input -->
       <input
         v-model="searchQuery"
         type="text"
         placeholder="Enter city name..."
-        @keyup.enter="handleSearch"
+        @input="handleSearch"
+        :disabled="isLoading"
         class="w-full px-4 py-3 rounded-lg 
                bg-white border border-blue-200/50
                focus:outline-none focus:ring-2 focus:ring-blue-400 
-               placeholder-gray-500 text-gray-800 shadow-lg"
+               placeholder-gray-500 text-gray-800 shadow-lg
+               disabled:opacity-50 disabled:cursor-not-allowed
+               transition-all duration-200"
+        aria-label="Search for a city"
       />
+      
       <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
-        <!-- Search Button -->
         <button 
+          v-if="!isLoading"
           @click="handleSearch"
-          :disabled="store.loading"
           class="px-6 py-2 rounded-lg bg-blue-600 
                  text-white font-medium shadow-md
-                 hover:bg-blue-700 transition-all"
+                 hover:bg-blue-700 transition-all
+                 focus:outline-none focus:ring-2 focus:ring-blue-400
+                 disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="isLoading"
         >
-          {{ store.loading ? 'Searching...' : 'Search' }}
+          Search
         </button>
 
-        <!-- Location Button -->
         <button 
+          v-if="!isLoading"
           @click="handleGetLocation"
-          :disabled="store.loading"
-          class="p-2 rounded-lg bg-blue-600 text-white shadow-md hover:bg-blue-700"
+          class="p-2 rounded-lg bg-blue-600 text-white shadow-md 
+                 hover:bg-blue-700 transition-all
+                 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          :disabled="isLoading"
           title="Use my location"
+          aria-label="Use my location"
         >
           📍
         </button>
+
+        <!-- Loading Spinner -->
+        <div v-else 
+             class="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"
+             role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
       </div>
     </div>
 
     <!-- Error messages -->
-    <div class="mt-3 text-center">
-      <p v-if="store.error" class="text-red-500/90 bg-red-50 px-4 py-2 rounded-lg">
-        {{ store.error }}
-      </p>
-      <p v-if="geoLocationError" class="text-red-500/90 bg-red-50 px-4 py-2 rounded-lg">
-        {{ geoLocationError }}
+    <div v-if="errorMessage" 
+         class="mt-3 text-center"
+         role="alert"
+         aria-live="polite">
+      <p class="text-red-500/90 bg-red-50 px-4 py-2 rounded-lg">
+        {{ errorMessage }}
       </p>
     </div>
   </div>
