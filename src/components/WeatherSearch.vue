@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useWeatherStore } from '../stores/weatherStore';
 
 const store = useWeatherStore();
 const searchQuery = ref('');
 const geoLocationError = ref<string | null>(null);
+
+// Clear expired cache entries on component mount
+onMounted(() => {
+  store.clearExpiredCache();
+});
 
 const handleSearch = async () => {
   if (searchQuery.value.trim()) {

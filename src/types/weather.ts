@@ -1,3 +1,4 @@
+// weather.ts
 export interface WeatherData {
   city: string;
   current: {
@@ -15,8 +16,15 @@ export interface WeatherData {
   }>;
 }
 
+interface CacheEntry {
+  data: WeatherData;
+  timestamp: number;
+}
+
 export interface WeatherState {
   weatherData: WeatherData | null;
   loading: boolean;
   error: string | null;
+  cache: Map<string, CacheEntry>;
+  lastFetchTimestamp: number;
 }
