@@ -5,7 +5,8 @@ import type {
   WeatherState, 
   WeatherData, 
   WeatherError,
-  CacheEntry  // Add this import
+  CacheEntry,
+  WeatherAlert
 } from '../types/weather';
 import { WeatherErrorType } from '../types/weather';
 
@@ -28,6 +29,8 @@ export const useWeatherStore = defineStore('weather', {
     error: null,
     cache: new Map<string, CacheEntry>(),
     lastFetchTimestamp: 0,
+    favorites: [],
+    selectedUnit: 'metric'
   }),
 
   actions: {
@@ -95,38 +98,94 @@ export const useWeatherStore = defineStore('weather', {
     async makeWeatherRequests(params: WeatherParams) {
       const requestParams = {
         ...params,
-        units: 'metric',
+        units: this.selectedUnit,
         appid: API_KEY,
       };
 
-      return Promise.all([
-        this.fetchWithRetry(() => 
-          axios.get(`${BASE_URL}/weather`, { params: requestParams })
-        ),
+      const currentWeather = await this.fetchWithRetry(() => 
+        axios.get(`${BASE_URL}/weather`, { params: requestParams })
+      );
+
+      const { lat, lon } = currentWeather.data.coord;
+
+      const [forecast, airPollution, uvData] = await Promise.all([
         this.fetchWithRetry(() => 
           axios.get(`${BASE_URL}/forecast`, { params: requestParams })
         ),
+        this.fetchWithRetry(() => 
+          axios.get(`${BASE_URL}/air_pollution`, { 
+            params: { lat, lon, appid: API_KEY }
+          })
+        ).catch(() => null),
+        this.fetchWithRetry(() => 
+          axios.get(`${BASE_URL}/uvi`, { 
+            params: { lat, lon, appid: API_KEY }
+          })
+        ).catch(() => null)
       ]);
+
+      return { currentWeather, forecast, airPollution, uvData };
     },
 
-    processWeatherData(currentWeather: any, forecast: any): WeatherData {
+    processWeatherData(
+      currentWeather: any, 
+      forecast: any, 
+      airPollution?: any, 
+      uvData?: any
+    ): WeatherData {
+      const hourlyData = forecast.data.list.slice(0, 8).map((item: any) => ({
+        time: new Date(item.dt * 1000).toLocaleTimeString([], { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }),
+        temp: Math.round(item.main.temp),
+        icon: item.weather[0].icon,
+        description: item.weather[0].description
+      }));
+
       return {
         city: currentWeather.data.name,
+        coord: {
+          lat: currentWeather.data.coord.lat,
+          lon: currentWeather.data.coord.lon
+        },
         current: {
           temp: Math.round(currentWeather.data.main.temp),
+          feelsLike: Math.round(currentWeather.data.main.feels_like),
+          tempMin: Math.round(currentWeather.data.main.temp_min),
+          tempMax: Math.round(currentWeather.data.main.temp_max),
           humidity: currentWeather.data.main.humidity,
           windSpeed: currentWeather.data.wind.speed,
           description: currentWeather.data.weather[0].description,
           icon: currentWeather.data.weather[0].icon,
+          sunrise: currentWeather.data.sys.sunrise,
+          sunset: currentWeather.data.sys.sunset,
+          pressure: currentWeather.data.main.pressure,
+          visibility: currentWeather.data.visibility,
+          uvIndex: uvData?.data.value,
+          airQuality: airPollution ? {
+            aqi: airPollution.data.list[0].main.aqi,
+            co: airPollution.data.list[0].components.co,
+            no2: airPollution.data.list[0].components.no2,
+            o3: airPollution.data.list[0].components.o3,
+            pm2_5: airPollution.data.list[0].components.pm2_5,
+            pm10: airPollution.data.list[0].components.pm10,
+          } : undefined,
         },
         forecast: forecast.data.list
           .filter((_: any, index: number) => index % 8 === 0)
           .map((item: any) => ({
             date: new Date(item.dt * 1000).toLocaleDateString(),
             temp: Math.round(item.main.temp),
+            tempMin: Math.round(item.main.temp_min),
+            tempMax: Math.round(item.main.temp_max),
             description: item.weather[0].description,
             icon: item.weather[0].icon,
+            humidity: item.main.humidity,
+            windSpeed: item.wind.speed,
+            precipitation: item.pop * 100
           })),
+        hourlyForecast: hourlyData
       };
     },
 
@@ -160,8 +219,15 @@ export const useWeatherStore = defineStore('weather', {
       this.error = null;
 
       try {
-        const [currentWeather, forecast] = await this.makeWeatherRequests(params);
-        const processedData = this.processWeatherData(currentWeather, forecast);
+        const { currentWeather, forecast, airPollution, uvData } = 
+          await this.makeWeatherRequests(params);
+        
+        const processedData = this.processWeatherData(
+          currentWeather, 
+          forecast, 
+          airPollution, 
+          uvData
+        );
         
         this.cache.set(cacheKey, {
           data: processedData,
@@ -183,6 +249,31 @@ export const useWeatherStore = defineStore('weather', {
 
     async fetchWeatherByCoords(lat: number, lon: number) {
       return this.throttledFetchWeatherData({ lat, lon });
+    },
+
+    toggleUnit() {
+      this.selectedUnit = this.selectedUnit === 'metric' ? 'imperial' : 'metric';
+      if (this.weatherData) {
+        const { lat, lon } = this.weatherData.coord;
+        this.fetchWeatherByCoords(lat, lon);
+      }
+    },
+
+    addToFavorites() {
+      if (this.weatherData) {
+        const { city, coord } = this.weatherData;
+        if (!this.favorites.some(f => f.name === city)) {
+          this.favorites.push({
+            name: city,
+            lat: coord.lat,
+            lon: coord.lon
+          });
+        }
+      }
+    },
+
+    removeFromFavorites(cityName: string) {
+      this.favorites = this.favorites.filter(f => f.name !== cityName);
     },
 
     clearCache() {
