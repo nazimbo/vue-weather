@@ -6,9 +6,11 @@ import type {
   WeatherData, 
   WeatherError,
   CacheEntry,
-  WeatherAlert
 } from '../types/weather';
 import { WeatherErrorType } from '../types/weather';
+
+const FAVORITES_STORAGE_KEY = 'weather-favorites';
+const UNITS_STORAGE_KEY = 'weather-units';
 
 const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
 const BASE_URL = import.meta.env.VITE_OPENWEATHER_BASE_URL;
@@ -22,6 +24,40 @@ interface WeatherParams {
   lon?: number;
 }
 
+// Helper function to safely parse stored favorites
+const loadStoredFavorites = () => {
+  try {
+    const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.every(item => 
+        typeof item === 'object' && 
+        typeof item.name === 'string' && 
+        typeof item.lat === 'number' && 
+        typeof item.lon === 'number'
+      )) {
+        return parsed;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading favorites:', error);
+  }
+  return [];
+};
+
+// Helper function to safely load stored units preference
+const loadStoredUnits = (): 'metric' | 'imperial' => {
+  try {
+    const stored = localStorage.getItem(UNITS_STORAGE_KEY);
+    if (stored === 'metric' || stored === 'imperial') {
+      return stored;
+    }
+  } catch (error) {
+    console.error('Error loading units preference:', error);
+  }
+  return 'metric'; // Default to metric if no valid stored preference
+};
+
 export const useWeatherStore = defineStore('weather', {
   state: (): WeatherState => ({
     weatherData: null,
@@ -29,8 +65,8 @@ export const useWeatherStore = defineStore('weather', {
     error: null,
     cache: new Map<string, CacheEntry>(),
     lastFetchTimestamp: 0,
-    favorites: [],
-    selectedUnit: 'metric'
+    favorites: loadStoredFavorites(), // Load favorites from localStorage
+    selectedUnit: loadStoredUnits()   // Load units preference from localStorage
   }),
 
   actions: {
@@ -253,6 +289,10 @@ export const useWeatherStore = defineStore('weather', {
 
     toggleUnit() {
       this.selectedUnit = this.selectedUnit === 'metric' ? 'imperial' : 'metric';
+      // Persist unit preference
+      localStorage.setItem(UNITS_STORAGE_KEY, this.selectedUnit);
+      
+      // Refresh weather data if available
       if (this.weatherData) {
         const { lat, lon } = this.weatherData.coord;
         this.fetchWeatherByCoords(lat, lon);
@@ -268,12 +308,25 @@ export const useWeatherStore = defineStore('weather', {
             lat: coord.lat,
             lon: coord.lon
           });
+          // Persist updated favorites
+          this.saveFavorites();
         }
       }
     },
 
     removeFromFavorites(cityName: string) {
       this.favorites = this.favorites.filter(f => f.name !== cityName);
+      // Persist updated favorites
+      this.saveFavorites();
+    },
+
+    // New method to handle favorites persistence
+    saveFavorites() {
+      try {
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(this.favorites));
+      } catch (error) {
+        console.error('Error saving favorites:', error);
+      }
     },
 
     clearCache() {
@@ -288,5 +341,17 @@ export const useWeatherStore = defineStore('weather', {
         }
       }
     },
+    
+    // Optional: Method to clear all stored data
+    clearStoredData() {
+      try {
+        localStorage.removeItem(FAVORITES_STORAGE_KEY);
+        localStorage.removeItem(UNITS_STORAGE_KEY);
+        this.favorites = [];
+        this.selectedUnit = 'metric';
+      } catch (error) {
+        console.error('Error clearing stored data:', error);
+      }
+    }
   },
 });
