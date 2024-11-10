@@ -147,25 +147,51 @@ const handleRemoveFavorite = (event: Event, cityName: string) => {
 
       <!-- Favorites Dropdown -->
       <div v-if="showFavorites && store.favorites.length > 0"
-           class="absolute z-10 mt-2 w-full bg-white rounded-lg shadow-xl 
-                  border border-blue-100 py-2 max-h-60 overflow-y-auto">
-        <div 
-          v-for="favorite in store.favorites"
-          :key="favorite.name"
-          @click="handleFavoriteClick(favorite.lat, favorite.lon)"
-          class="px-4 py-2 hover:bg-blue-50 transition-colors duration-200 
-                 flex justify-between items-center group cursor-pointer"
-        >
-          <span>{{ favorite.name }}</span>
-          <span
-            @click="(e) => handleRemoveFavorite(e, favorite.name)"
-            class="text-gray-400 hover:text-red-500 opacity-0 
-                   group-hover:opacity-100 transition-opacity duration-200
-                   cursor-pointer"
-            title="Remove from favorites"
+           class="absolute z-50 mt-2 inset-x-0 bg-white rounded-lg shadow-xl 
+                  border border-blue-200 overflow-hidden">
+        <!-- Dropdown Header -->
+        <div class="px-4 py-2 bg-blue-50 border-b border-blue-100">
+          <h3 class="text-sm font-semibold text-blue-800">
+            Saved Locations ({{ store.favorites.length }})
+          </h3>
+        </div>
+        
+        <!-- Favorites List -->
+        <div class="max-h-60 overflow-y-auto overscroll-contain py-1">
+          <div 
+            v-for="favorite in store.favorites"
+            :key="favorite.name"
+            @click="handleFavoriteClick(favorite.lat, favorite.lon)"
+            class="group relative cursor-pointer hover:bg-blue-50 transition-all duration-200"
           >
-            ✕
-          </span>
+            <!-- Location Info -->
+            <div class="px-4 py-3 flex items-center gap-3">
+              <span class="text-blue-600">📍</span>
+              <div class="flex-1">
+                <span class="font-medium text-gray-800">{{ favorite.name }}</span>
+                <p class="text-xs text-gray-500">
+                  {{ favorite.lat.toFixed(2) }}°, {{ favorite.lon.toFixed(2) }}°
+                </p>
+              </div>
+              
+              <!-- Remove Button -->
+              <button
+                @click="(e) => handleRemoveFavorite(e, favorite.name)"
+                class="p-1.5 rounded-full opacity-0 group-hover:opacity-100
+                       hover:bg-red-100 hover:text-red-600
+                       transition-all duration-200 text-gray-400"
+                title="Remove from favorites"
+              >
+                <span class="text-sm">✕</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State (if needed) -->
+        <div v-if="store.favorites.length === 0" 
+             class="px-4 py-3 text-center text-gray-500 text-sm">
+          No saved locations yet
         </div>
       </div>
     </div>
