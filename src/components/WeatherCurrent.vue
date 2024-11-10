@@ -11,12 +11,6 @@ const formatTime = (timestamp: number): string => {
   });
 };
 
-const getHumidityLevel = (humidity: number): string => {
-  if (humidity < 30) return 'Low';
-  if (humidity < 60) return 'Moderate';
-  return 'High';
-};
-
 const getUVInfo = (uvIndex: number) => {
   if (uvIndex <= 2) return { level: 'Low', color: 'text-green-600' };
   if (uvIndex <= 5) return { level: 'Moderate', color: 'text-yellow-600' };
