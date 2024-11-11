@@ -47,9 +47,16 @@ const windSpeedUnit = computed(() => {
         {{ store.weatherData.city }}
       </h2>
       <div class="flex gap-4">
-        <button @click="store.toggleUnit"
+        <button @click="async () => { 
+                  try {
+                    await store.toggleUnit();
+                  } catch (error) {
+                    console.error('Error switching units:', error);
+                  }
+                }"
+                :disabled="store.loading"
                 class="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 
-                       transition-colors duration-200">
+                       transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
           {{ store.selectedUnit.toUpperCase() }}
         </button>
         <button @click="isFavorite ? store.removeFromFavorites(store.weatherData.city) : store.addToFavorites()"

@@ -287,15 +287,20 @@ export const useWeatherStore = defineStore('weather', {
       return this.throttledFetchWeatherData({ lat, lon });
     },
 
-    toggleUnit() {
+    async toggleUnit() {
+      // Update the unit
       this.selectedUnit = this.selectedUnit === 'metric' ? 'imperial' : 'metric';
       // Persist unit preference
       localStorage.setItem(UNITS_STORAGE_KEY, this.selectedUnit);
       
+      // Clear cache when changing units to force fresh data
+      this.clearCache();
+      
       // Refresh weather data if available
       if (this.weatherData) {
         const { lat, lon } = this.weatherData.coord;
-        this.fetchWeatherByCoords(lat, lon);
+        // Use the non-throttled version to ensure immediate update
+        await this.fetchWeatherData({ lat, lon });
       }
     },
 
