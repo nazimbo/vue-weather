@@ -169,6 +169,7 @@ export const useWeatherStore = defineStore('weather', {
       airPollution?: any, 
       uvData?: any
     ): WeatherData {
+      // Process hourly data first (next 24 hours)
       const hourlyData = forecast.data.list.slice(0, 8).map((item: any) => ({
         time: new Date(item.dt * 1000).toLocaleTimeString([], { 
           hour: '2-digit', 
@@ -178,7 +179,86 @@ export const useWeatherStore = defineStore('weather', {
         icon: item.weather[0].icon,
         description: item.weather[0].description
       }));
-
+    
+      // Process daily forecast data
+      const dailyForecasts = new Map<string, any[]>();
+      
+      // Debug logging
+      console.log('Total forecast items:', forecast.data.list.length);
+      
+      forecast.data.list.forEach((item: any) => {
+        const date = new Date(item.dt * 1000);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        if (!dailyForecasts.has(dateStr)) {
+          dailyForecasts.set(dateStr, []);
+        }
+        dailyForecasts.get(dateStr)!.push(item);
+      });
+    
+      // Debug logging
+      console.log('Unique dates:', Array.from(dailyForecasts.keys()));
+    
+      // Get today's date at start of day for comparison
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+    
+      // Process all dates except today
+      const processedForecast = Array.from(dailyForecasts.entries())
+        .filter(([dateStr]) => {
+          const forecastDate = new Date(dateStr);
+          return forecastDate > today;
+        })
+        .map(([date, items]) => {
+          const temps = items.map(item => item.main.temp);
+          const maxTemp = Math.max(...temps);
+          const minTemp = Math.min(...temps);
+          
+          // Get the most common weather condition for the day
+          const weatherCounts = new Map<string, number>();
+          items.forEach(item => {
+            const desc = item.weather[0].description;
+            weatherCounts.set(desc, (weatherCounts.get(desc) || 0) + 1);
+          });
+          const mostCommonWeather = Array.from(weatherCounts.entries())
+            .reduce((a, b) => a[1] > b[1] ? a : b)[0];
+          
+          // Get the corresponding icon for the most common weather
+          const weatherIcon = items.find(item => 
+            item.weather[0].description === mostCommonWeather
+          )?.weather[0].icon || items[0].weather[0].icon;
+    
+          // Calculate average humidity and wind speed
+          const avgHumidity = Math.round(
+            items.reduce((sum, item) => sum + item.main.humidity, 0) / items.length
+          );
+          const avgWindSpeed = Number(
+            (items.reduce((sum, item) => sum + item.wind.speed, 0) / items.length).toFixed(1)
+          );
+    
+          // Get highest precipitation probability for the day
+          const maxPrecipitation = Math.round(
+            Math.max(...items.map(item => (item.pop || 0) * 100))
+          );
+    
+          return {
+            date,
+            temp: Math.round((maxTemp + minTemp) / 2),
+            tempMin: Math.round(minTemp),
+            tempMax: Math.round(maxTemp),
+            description: mostCommonWeather,
+            icon: weatherIcon,
+            humidity: avgHumidity,
+            windSpeed: avgWindSpeed,
+            precipitation: maxPrecipitation
+          };
+        })
+        .slice(0, 5); // Ensure we get exactly 5 days
+    
+      // Debug logging
+      console.log('Processed forecast days:', processedForecast.length);
+      console.log('Forecast dates:', processedForecast.map(f => f.date));
+    
       return {
         city: currentWeather.data.name,
         coord: {
@@ -208,19 +288,7 @@ export const useWeatherStore = defineStore('weather', {
             pm10: airPollution.data.list[0].components.pm10,
           } : undefined,
         },
-        forecast: forecast.data.list
-          .filter((_: any, index: number) => index % 8 === 0)
-          .map((item: any) => ({
-            date: new Date(item.dt * 1000).toLocaleDateString(),
-            temp: Math.round(item.main.temp),
-            tempMin: Math.round(item.main.temp_min),
-            tempMax: Math.round(item.main.temp_max),
-            description: item.weather[0].description,
-            icon: item.weather[0].icon,
-            humidity: item.main.humidity,
-            windSpeed: item.wind.speed,
-            precipitation: item.pop * 100
-          })),
+        forecast: processedForecast,
         hourlyForecast: hourlyData
       };
     },
