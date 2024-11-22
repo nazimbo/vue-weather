@@ -1,25 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useWeatherStore } from '../stores/weatherStore';
+import { formatters } from '../utils/weather';
 
 const store = useWeatherStore();
-
-const formatTime = (timestamp: number): string => {
-  return new Date(timestamp * 1000).toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
 
 const getUVInfo = (uvIndex: number) => {
   if (uvIndex <= 2) return { level: 'Low', color: 'text-green-600' };
   if (uvIndex <= 5) return { level: 'Moderate', color: 'text-yellow-600' };
   if (uvIndex <= 7) return { level: 'High', color: 'text-orange-600' };
   return { level: 'Very High', color: 'text-red-600' };
-};
-
-const formatVisibility = (visibility: number): string => {
-  return `${(visibility / 1000).toFixed(1)} km`;
 };
 
 const isFavorite = computed(() => {
@@ -126,11 +116,11 @@ const windSpeedUnit = computed(() => {
         <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between">
             <span class="text-amber-600">🌅 Sunrise</span>
-            <span>{{ formatTime(store.weatherData.current.sunrise) }}</span>
+            <span>{{ formatters.time(store.weatherData.current.sunrise) }}</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-amber-800">🌇 Sunset</span>
-            <span>{{ formatTime(store.weatherData.current.sunset) }}</span>
+            <span>{{ formatters.time(store.weatherData.current.sunset) }}</span>
           </div>
         </div>
       </div>
@@ -141,7 +131,7 @@ const windSpeedUnit = computed(() => {
         <div class="grid grid-cols-2 gap-y-2">
           <div>
             <span class="text-blue-700">👁️ Visibility</span>
-            <p>{{ formatVisibility(store.weatherData.current.visibility) }}</p>
+            <p>{{ formatters.visibility(store.weatherData.current.visibility) }}</p>
           </div>
           <div>
             <span class="text-blue-700">⏲️ Pressure</span>
