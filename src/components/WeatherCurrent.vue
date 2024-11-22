@@ -16,14 +16,6 @@ const isFavorite = computed(() => {
   if (!store.weatherData) return false;
   return store.favorites.some(f => f.name === store.weatherData?.city);
 });
-
-const temperatureUnit = computed(() => {
-  return store.selectedUnit === 'metric' ? '°C' : '°F';
-});
-
-const windSpeedUnit = computed(() => {
-  return store.selectedUnit === 'metric' ? 'm/s' : 'mph';
-});
 </script>
 
 <template>
