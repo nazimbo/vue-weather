@@ -68,10 +68,10 @@ const windSpeedUnit = computed(() => {
         />
         <div>
           <div class="text-6xl font-extrabold text-blue-700">
-            {{ store.weatherData.current.temp }}{{ temperatureUnit }}
+            {{ formatters.temperature(store.weatherData.current.temp, store.selectedUnit) }}
           </div>
           <div class="text-xl text-gray-600">
-            Feels like {{ store.weatherData.current.feelsLike }}{{ temperatureUnit }}
+            Feels like {{ formatters.temperature(store.weatherData.current.feelsLike, store.selectedUnit) }}
           </div>
           <p class="text-lg text-gray-600 capitalize italic">
             {{ store.weatherData.current.description }}
@@ -85,20 +85,20 @@ const windSpeedUnit = computed(() => {
           <div class="flex items-center gap-2 mb-2">
             <span class="text-red-500">↑</span>
             <span class="font-semibold">
-              {{ store.weatherData.current.tempMax }}{{ temperatureUnit }}
+              {{ formatters.temperature(store.weatherData.current.tempMax, store.selectedUnit) }}
             </span>
           </div>
           <div class="flex items-center gap-2">
             <span class="text-blue-500">↓</span>
             <span class="font-semibold">
-              {{ store.weatherData.current.tempMin }}{{ temperatureUnit }}
+              {{ formatters.temperature(store.weatherData.current.tempMin, store.selectedUnit) }}
             </span>
           </div>
         </div>
         <div>
           <div class="mb-2">
             <span class="text-blue-700">💨 Wind</span>
-            <p>{{ store.weatherData.current.windSpeed }} {{ windSpeedUnit }}</p>
+            <p>{{ formatters.windSpeed(store.weatherData.current.windSpeed, store.selectedUnit) }}</p>
           </div>
           <div>
             <span class="text-blue-700">💧 Humidity</span>
