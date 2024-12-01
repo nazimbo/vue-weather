@@ -68,6 +68,7 @@ export interface WeatherState {
   loading: boolean;
   error: WeatherError | null;
   cache: Map<string, CacheEntry>;
+  cacheCleanupInterval: number | null;
   lastFetchTimestamp: number;
   favorites: Array<{
     name: string;

@@ -11,6 +11,7 @@ import { WeatherErrorType } from '../types/weather';
 
 const FAVORITES_STORAGE_KEY = 'weather-favorites';
 const UNITS_STORAGE_KEY = 'weather-units';
+const MAX_CACHE_SIZE = 50; // Maximum number of cached locations
 
 const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
 const BASE_URL = import.meta.env.VITE_OPENWEATHER_BASE_URL;
@@ -64,6 +65,7 @@ export const useWeatherStore = defineStore('weather', {
     loading: false,
     error: null,
     cache: new Map<string, CacheEntry>(),
+    cacheCleanupInterval: null,
     lastFetchTimestamp: 0,
     favorites: loadStoredFavorites(), // Load favorites from localStorage
     selectedUnit: loadStoredUnits()   // Load units preference from localStorage
@@ -102,6 +104,48 @@ export const useWeatherStore = defineStore('weather', {
         type: WeatherErrorType.UNKNOWN,
         message: error instanceof Error ? error.message : 'An unexpected error occurred.'
       };
+    },
+
+    initializeCacheCleanup() {
+      // Clean up every 5 minutes, using window.setInterval
+      this.cacheCleanupInterval = window.setInterval(() => {
+        this.cleanCache();
+      }, 5 * 60 * 1000);
+    },
+
+    cleanCache() {
+      const now = Date.now();
+      
+      // Remove expired entries
+      for (const [key, entry] of this.cache.entries()) {
+        if (now - entry.timestamp >= CACHE_DURATION) {
+          this.cache.delete(key);
+        }
+      }
+
+      // If still too many entries, remove oldest ones
+      if (this.cache.size > MAX_CACHE_SIZE) {
+        const entries = Array.from(this.cache.entries())
+          .sort((a, b) => a[1].timestamp - b[1].timestamp);
+        
+        const entriesToRemove = entries.slice(0, entries.length - MAX_CACHE_SIZE);
+        for (const [key] of entriesToRemove) {
+          this.cache.delete(key);
+        }
+      }
+    },
+
+    // Add cleanup on store initialization
+    initialize() {  // Changed from $onInit since Pinia uses different lifecycle
+      this.initializeCacheCleanup();
+    },
+
+    // Cleanup when store is no longer needed
+    cleanup() {  // Changed from $dispose
+      if (this.cacheCleanupInterval) {
+        window.clearInterval(this.cacheCleanupInterval);
+        this.cacheCleanupInterval = null;
+      }
     },
 
     getCacheKey(params: WeatherParams): string {
