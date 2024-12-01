@@ -356,19 +356,35 @@ export const useWeatherStore = defineStore('weather', {
     },
 
     async toggleUnit() {
-      // Update the unit
-      this.selectedUnit = this.selectedUnit === 'metric' ? 'imperial' : 'metric';
-      // Persist unit preference
-      localStorage.setItem(UNITS_STORAGE_KEY, this.selectedUnit);
-      
-      // Clear cache when changing units to force fresh data
-      this.clearCache();
-      
-      // Refresh weather data if available
-      if (this.weatherData) {
-        const { lat, lon } = this.weatherData.coord;
-        // Use the non-throttled version to ensure immediate update
-        await this.fetchWeatherData({ lat, lon });
+      try {
+        this.loading = true;  // Set loading state
+        
+        // Update the unit
+        const newUnit = this.selectedUnit === 'metric' ? 'imperial' : 'metric';
+        
+        // Store new unit first to ensure consistency
+        localStorage.setItem(UNITS_STORAGE_KEY, newUnit);
+        this.selectedUnit = newUnit;
+        
+        // Clear cache before fetching new data
+        this.clearCache();
+        
+        // Refresh weather data if available
+        if (this.weatherData) {
+          const { lat, lon } = this.weatherData.coord;
+          await this.fetchWeatherData({ lat, lon });
+        }
+      } catch (error) {
+        // Handle error and restore previous unit if needed
+        console.error('Error toggling unit:', error);
+        this.error = this.handleError(error);
+        
+        // Restore previous unit
+        const previousUnit = this.selectedUnit === 'metric' ? 'imperial' : 'metric';
+        localStorage.setItem(UNITS_STORAGE_KEY, previousUnit);
+        this.selectedUnit = previousUnit;
+      } finally {
+        this.loading = false;
       }
     },
 
