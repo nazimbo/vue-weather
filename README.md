@@ -5,38 +5,40 @@ This is a real-time weather application built with Vue.js 3, TypeScript, and Tai
 ## Features
 
 - **Real-Time Weather Data:**
-    - Current weather conditions: temperature, humidity, wind speed, UV index, air quality.
-    - 5-day forecast with daily summaries.
-    - Hourly forecast for the next 24 hours.
+  - Current weather conditions: temperature, humidity, wind speed, UV index, air quality.
+  - 5-day forecast with daily summaries.
+  - Hourly forecast for the next 24 hours.
 - **Search Functionality:**
-    - Search weather by city name.
-    - Fetch weather data for the user's current location using geolocation.
+  - Search weather by city name with autocomplete suggestions.
+  - Fetch weather data for the user's current location using geolocation.
 - **Favorites Management:**
-    - Save, view, and remove favorite locations.
-    - Persist favorite locations using localStorage.
+  - Save, view, and remove favorite locations.
+  - Persist favorite locations using localStorage.
 - **Units Preference:**
-    - Switch between metric (Celsius, m/s) and imperial (Fahrenheit, mph) units.
-    - Changes persist across sessions.
+  - Switch between metric (Celsius, m/s) and imperial (Fahrenheit, mph) units.
+  - Changes persist across sessions.
 - **Caching:**
-    - Cache weather data for improved performance.
-    - Automatic cleanup of expired cache entries.
-    - Cache size limit of 50 entries.
+  - Cache weather data for improved performance.
+  - Automatic cleanup of expired cache entries.
+  - Cache size limit of 50 entries.
 - **Developer Tools:**
-    - Accessible in development mode for debugging.
-    - Displays cache size, current state, and actions to clear data or cache.
+  - Accessible in development mode for debugging.
+  - Displays cache size, current state, and actions to clear data or cache.
 
 ## Technical Stack
 
 - **Frontend:**
-    - Framework: Vue.js 3
-    - State Management: Pinia
-    - Styling: Tailwind CSS
-    - API Integration: Axios
+  - Framework: Vue.js 3
+  - State Management: Pinia
+  - Styling: Tailwind CSS
+  - API Integration: Axios
+  - Utility library: @vueuse/core
 - **Backend Services:**
-    - Weather API: OpenWeatherMap
+  - Weather API: OpenWeatherMap
+  - Geocoding API: OpenCage
 - **Development Tools:**
-    - Build Tool: Vite
-    - Programming Language: TypeScript
+  - Build Tool: Vite
+  - Programming Language: TypeScript
 
 ## Setup and Usage
 
@@ -46,31 +48,41 @@ This is a real-time weather application built with Vue.js 3, TypeScript, and Tai
     git clone [YOUR_REPOSITORY_URL]
     cd [YOUR_PROJECT_DIRECTORY]
     ```
+
 2.  **Install dependencies:**
 
     ```bash
     npm install
     ```
+
 3.  **Set up environment variables:**
+
     - Create a `.env` file in the root of your project.
-    - Add your OpenWeatherMap API key, OpenCage API key and base URL.
-     - Example:
-        ```
-          VITE_OPENWEATHER_API_KEY=your_openweathermap_api_key
-          VITE_OPENWEATHER_BASE_URL=https://api.openweathermap.org/data/2.5
-          VITE_OPENCAGE_API_KEY=your_opencage_api_key
-        ```
-    - Get your API key here: [OpenWeatherMap](https://openweathermap.org/api) and  [OpenCage](https://opencagedata.com/).
+    - Add your OpenWeatherMap API key, OpenCage API key, and base URL.
+    - Example:
+
+      ```
+        VITE_OPENWEATHER_API_KEY=your_openweathermap_api_key
+        VITE_OPENWEATHER_BASE_URL=https://api.openweathermap.org/data/2.5
+        VITE_OPENCAGE_API_KEY=your_opencage_api_key
+      ```
+
+    - Get your API key here:
+      - [OpenWeatherMap](https://openweathermap.org/api)
+      - [OpenCage](https://opencagedata.com/)
+
 4.  **Run the development server:**
 
     ```bash
     npm run dev
     ```
+
 5.  **Build for production:**
 
     ```bash
     npm run build
     ```
+
 6.  **Preview the production build:**
 
     ```bash
@@ -81,21 +93,22 @@ This is a real-time weather application built with Vue.js 3, TypeScript, and Tai
 
 - **Base URL:** `https://api.openweathermap.org/data/2.5`
 - **Endpoints:**
-    - Current weather: `/weather`
-    - 5-day forecast: `/forecast`
-    - Air pollution: `/air_pollution`
-    - UV index: `/uvi`
+  - Current weather: `/weather`
+  - 5-day forecast: `/forecast`
+  - Air pollution: `/air_pollution`
+  - UV index: `/uvi`
 - **Parameters:**
-    - `q`: City name
-    - `lat, lon`: Coordinates
-    - `units`: Metric or imperial
-    - `appid`: API key
+  - `q`: City name
+  - `lat, lon`: Coordinates
+  - `units`: Metric or imperial
+  - `appid`: API key
 
 ## Performance Considerations
 
 - **Caching:** Weather data is cached for 10 minutes, with a limit of 50 entries.
 - **Debouncing:** User input in the search bar is debounced to minimize API calls.
 - **Lazy Loading:** Non-critical components are lazy-loaded for faster initial load times.
+- **Throttling:** Fetch weather API calls are throttled to avoid too many requests in a short time.
 
 ## Validation and Error Handling
 
