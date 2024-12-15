@@ -38,39 +38,6 @@ This is a real-time weather application built with Vue.js 3, TypeScript, and Tai
     - Build Tool: Vite
     - Programming Language: TypeScript
 
-## Project Structure
-src/
-├── components/
-│ ├── DevTools.vue # Development tools panel
-│ ├── WeatherCurrent.vue # Displays current weather conditions
-│ ├── WeatherForecast.vue # Displays 5-day forecast
-│ ├── WeatherHourly.vue # Displays hourly forecast for next 24 hours
-│ └── WeatherSearch.vue # Search component with location and favorites
-├── stores/
-│ └── weatherStore.ts # Manages weather data, caching, user preferences
-├── types/
-│ └── weather.ts # TypeScript interfaces and types
-├── utils/
-│ └── weather.ts # Utility functions for formatting data
-├── views/
-│ └── HomeView.vue # Main app view
-├── App.vue # Root component
-├── main.ts # Entry point
-├── style.css # Global styles
-└── vite-env.d.ts # Vite environment types
-.env.example # Example environment variables file
-.gitignore # Git ignore file
-index.html # Main html entry point
-package.json # Node dependencies and scripts
-postcss.config.js # Postcss configuration
-README.md # This file
-tailwind.config.js # Tailwind configuration
-tsconfig.app.json # Typescript config
-tsconfig.json # Main Typescript config
-tsconfig.node.json # Typescript config
-vite.config.ts # Vite configuration
-
-
 ## Setup and Usage
 
 1.  **Clone the repository:**
