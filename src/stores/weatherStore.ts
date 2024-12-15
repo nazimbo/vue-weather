@@ -9,14 +9,15 @@ import type {
   ForecastItem
 } from '../types/weather';
 import { WeatherErrorType } from '../types/weather';
+import { compress } from 'lz-string';
+
 
 const FAVORITES_STORAGE_KEY = 'weather-favorites';
 const UNITS_STORAGE_KEY = 'weather-units';
 const MAX_CACHE_SIZE = 50; // Maximum number of cached locations
-
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
 const BASE_URL = import.meta.env.VITE_OPENWEATHER_BASE_URL;
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
@@ -107,33 +108,25 @@ export const useWeatherStore = defineStore('weather', {
       };
     },
 
-    initializeCacheCleanup() {
-      // Clean up every 5 minutes, using window.setInterval
+     initializeCacheCleanup() {
       this.cacheCleanupInterval = window.setInterval(() => {
         this.cleanCache();
       }, 5 * 60 * 1000);
     },
 
-    cleanCache() {
-      const now = Date.now();
-      
-      // Remove expired entries
-      for (const [key, entry] of this.cache.entries()) {
-        if (now - entry.timestamp >= CACHE_DURATION) {
-          this.cache.delete(key);
+     cleanCache() {
+        if (this.cache.size <= MAX_CACHE_SIZE) {
+          return;
         }
-      }
 
-      // If still too many entries, remove oldest ones
-      if (this.cache.size > MAX_CACHE_SIZE) {
-        const entries = Array.from(this.cache.entries())
-          .sort((a, b) => a[1].timestamp - b[1].timestamp);
-        
-        const entriesToRemove = entries.slice(0, entries.length - MAX_CACHE_SIZE);
-        for (const [key] of entriesToRemove) {
-          this.cache.delete(key);
-        }
-      }
+
+        const entries = Array.from(this.cache.entries());
+        // Sort by last accessed (timestamp)
+        entries.sort(([, a], [, b]) => a.lastAccessed - b.lastAccessed);
+
+
+      const entriesToRemove = entries.slice(0, entries.length - MAX_CACHE_SIZE);
+      entriesToRemove.forEach(([key]) => this.cache.delete(key));
     },
 
     // Add cleanup on store initialization
@@ -154,7 +147,7 @@ export const useWeatherStore = defineStore('weather', {
     },
 
     isCacheValid(cacheEntry: CacheEntry): boolean {
-      return Date.now() - cacheEntry.timestamp < CACHE_DURATION;
+     return Date.now() - cacheEntry.timestamp < CACHE_DURATION;
     },
 
     async delay(ms: number): Promise<void> {
@@ -329,11 +322,11 @@ export const useWeatherStore = defineStore('weather', {
       };
     },
 
-    throttledFetchWeatherData: useThrottleFn(
-      async function(this: any, params: WeatherParams) {
-        return this.fetchWeatherData(params);
-      },
-      1000
+     throttledFetchWeatherData: useThrottleFn(
+        async function(this: any, params: WeatherParams) {
+            return this.fetchWeatherData(params);
+        },
+        1000
     ),
 
     async fetchWeatherData(params: WeatherParams) {
@@ -347,13 +340,14 @@ export const useWeatherStore = defineStore('weather', {
       }
 
       const cacheKey = this.getCacheKey(params);
-      const cached = this.cache.get(cacheKey);
+        const cached = this.cache.get(cacheKey);
 
-      if (cached && this.isCacheValid(cached)) {
-        this.weatherData = cached.data;
-        this.error = null;
-        return;
-      }
+        if (cached && this.isCacheValid(cached)) {
+           this.weatherData = cached.data;
+            this.updateCacheAccessTime(cacheKey);
+           this.error = null;
+            return;
+        }
 
       this.loading = true;
       this.error = null;
@@ -370,8 +364,10 @@ export const useWeatherStore = defineStore('weather', {
         );
         
         this.cache.set(cacheKey, {
-          data: processedData,
-          timestamp: Date.now(),
+            data: processedData,
+            timestamp: Date.now(),
+            lastAccessed: Date.now(),
+            compressed: compress(JSON.stringify(processedData)),
         });
 
         this.weatherData = processedData;
@@ -389,6 +385,14 @@ export const useWeatherStore = defineStore('weather', {
 
     async fetchWeatherByCoords(lat: number, lon: number) {
       return this.throttledFetchWeatherData({ lat, lon });
+    },
+    
+    updateCacheAccessTime(key: string) {
+        const cacheEntry = this.cache.get(key);
+            if (cacheEntry) {
+              cacheEntry.lastAccessed = Date.now();
+            this.cache.set(key, cacheEntry);
+        }
     },
 
     async toggleUnit() {
@@ -459,12 +463,12 @@ export const useWeatherStore = defineStore('weather', {
     },
 
     clearExpiredCache() {
-      const now = Date.now();
-      for (const [key, entry] of this.cache.entries()) {
-        if (now - entry.timestamp >= CACHE_DURATION) {
-          this.cache.delete(key);
-        }
-      }
+        const now = Date.now();
+        this.cache.forEach((entry, key) => {
+            if (now - entry.timestamp >= CACHE_DURATION) {
+                this.cache.delete(key);
+            }
+        });
     },
     
     // Optional: Method to clear all stored data

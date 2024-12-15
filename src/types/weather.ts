@@ -51,6 +51,8 @@ export interface WeatherError {
 export interface CacheEntry {
   data: WeatherData;
   timestamp: number;
+    lastAccessed: number;
+  compressed: string;
 }
 
 export interface WeatherState {
