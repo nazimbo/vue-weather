@@ -1,17 +1,30 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onUnmounted } from 'vue';
 import { useWeatherStore } from '../stores/weatherStore';
 import { useDebounceFn } from '@vueuse/core';
+import axios from 'axios';
 
 const store = useWeatherStore();
 const searchQuery = ref('');
 const showFavorites = ref(false);
 const geoLocationError = ref<string | null>(null);
+const locationSuggestions = ref<any[]>([]);
+const showSuggestions = ref(false);
+const opencageApiKey = import.meta.env.VITE_OPENCAGE_API_KEY;
+const abortController = ref<AbortController | null>(null);
+
+const MIN_SEARCH_LENGTH = 3; //Minimum number of characters before starting to get locations
 
 const debouncedSearch = useDebounceFn(async (query: string) => {
-  if (query.trim()) {
-    await store.fetchWeather(query.trim());
-    showFavorites.value = false;
+  if (query.trim().length >= MIN_SEARCH_LENGTH) {
+    fetchLocationSuggestions(query.trim());
+    showSuggestions.value = true;
+  } else {
+    locationSuggestions.value = [];
+    showSuggestions.value = false;
+    if(query.trim() === ""){
+        store.weatherData = null;
+    }
   }
 }, 500);
 
@@ -30,7 +43,7 @@ const handleSearch = () => {
 const handleGetLocation = async () => {
   geoLocationError.value = null;
   showFavorites.value = false;
-  
+
   if (!navigator.geolocation) {
     geoLocationError.value = 'Geolocation is not supported by your browser';
     return;
@@ -50,12 +63,12 @@ const handleGetLocation = async () => {
       position.coords.longitude
     );
   } catch (error: any) {
-    geoLocationError.value = 
+    geoLocationError.value =
       error.code === 1 ? 'Please allow location access to use this feature' :
       error.code === 2 ? 'Location information unavailable' :
       error.code === 3 ? 'Location request timed out' :
       'Failed to get location';
-    
+
     console.error('Geolocation error:', error);
   }
 };
@@ -70,140 +83,180 @@ const handleFavoriteClick = async (lat: number, lon: number) => {
 };
 
 const handleRemoveFavorite = (event: Event, cityName: string) => {
-  event.stopPropagation(); // Prevent triggering the parent click handler
+  event.stopPropagation();
   store.removeFromFavorites(cityName);
 };
+
+const fetchLocationSuggestions = async (query: string) => {
+  if (!opencageApiKey) {
+        console.error('OpenCage API key is not configured');
+        return;
+  }
+  if (abortController.value) {
+    abortController.value.abort();
+  }
+
+  abortController.value = new AbortController();
+
+  try {
+      const response = await axios.get(
+      `https://api.opencagedata.com/geocode/v1/json?q=${query}&key=${opencageApiKey}&limit=5`,
+          { signal: abortController.value.signal }
+    );
+    locationSuggestions.value = response.data.results;
+
+  } catch (error: any) {
+    if (error.name !== 'AbortError') {
+      console.error('Error fetching location suggestions:', error);
+      locationSuggestions.value = [];
+    }
+  }
+    finally{
+        abortController.value = null;
+    }
+};
+
+const handleSuggestionClick = async (lat: number, lon: number) => {
+  await store.fetchWeatherByCoords(lat, lon);
+  showSuggestions.value = false;
+  searchQuery.value = "";
+  locationSuggestions.value = [];
+};
+
+onUnmounted(() => {
+    if (abortController.value) {
+    abortController.value.abort();
+    }
+});
+
 </script>
 
 <template>
-  <div class="mb-8 relative">
-    <div class="max-w-xl mx-auto">
-      <!-- Search Bar -->
-      <div class="relative">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Enter city name..."
-          @input="handleSearch"
-          :disabled="isLoading"
-          class="w-full px-4 py-3 pr-32 rounded-lg 
+    <div class="mb-8 relative">
+        <div class="max-w-xl mx-auto">
+            <!-- Search Bar -->
+            <div class="relative">
+                <input
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="Enter city name..."
+                    @input="handleSearch"
+                    :disabled="isLoading"
+                    class="w-full px-4 py-3 pr-32 rounded-lg
                  bg-white border border-blue-200/50
-                 focus:outline-none focus:ring-2 focus:ring-blue-400 
+                 focus:outline-none focus:ring-2 focus:ring-blue-400
                  placeholder-gray-500 text-gray-800 shadow-lg
                  disabled:opacity-50 disabled:cursor-not-allowed
                  transition-all duration-200"
-          @keyup.enter="handleSearch"
-        />
-        
-        <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
-          <!-- Favorites Button -->
-          <button 
-            v-if="!isLoading && store.favorites.length > 0"
-            @click="toggleFavorites"
-            class="p-2 rounded-lg bg-blue-600 text-white shadow-md 
+                />
+
+                <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
+                    <!-- Favorites Button -->
+                    <button
+                        v-if="!isLoading && store.favorites.length > 0"
+                        @click="toggleFavorites"
+                        class="p-2 rounded-lg bg-blue-600 text-white shadow-md
                    hover:bg-blue-700 transition-all
                    focus:outline-none focus:ring-2 focus:ring-blue-400"
-            :class="{ 'bg-blue-700': showFavorites }"
-            title="Show favorites"
-          >
-            ⭐
-          </button>
+                        :class="{ 'bg-blue-700': showFavorites }"
+                        title="Show favorites"
+                    >
+                        ⭐
+                    </button>
 
-          <!-- Location Button -->
-          <button 
-            v-if="!isLoading"
-            @click="handleGetLocation"
-            class="p-2 rounded-lg bg-blue-600 text-white shadow-md 
+                    <!-- Location Button -->
+                    <button
+                        v-if="!isLoading"
+                        @click="handleGetLocation"
+                        class="p-2 rounded-lg bg-blue-600 text-white shadow-md
                    hover:bg-blue-700 transition-all
                    focus:outline-none focus:ring-2 focus:ring-blue-400"
-            title="Use my location"
-          >
-            📍
-          </button>
+                        title="Use my location"
+                    >
+                        📍
+                    </button>
+                </div>
 
-          <!-- Search Button -->
-          <button 
-            v-if="!isLoading"
-            @click="handleSearch"
-            class="px-4 py-2 rounded-lg bg-blue-600 
-                   text-white font-medium shadow-md
-                   hover:bg-blue-700 transition-all
-                   focus:outline-none focus:ring-2 focus:ring-blue-400
-                   disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="!searchQuery.trim()"
-          >
-            Search
-          </button>
-
-          <!-- Loading Spinner -->
-          <div v-else 
-               class="animate-spin rounded-full h-8 w-8 
-                      border-2 border-blue-600 border-t-transparent"
-               role="status">
-            <span class="sr-only">Loading...</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Favorites Dropdown -->
-      <div v-if="showFavorites && store.favorites.length > 0"
-           class="absolute z-50 mt-2 inset-x-0 bg-white rounded-lg shadow-xl 
-                  border border-blue-200 overflow-hidden">
-        <!-- Dropdown Header -->
-        <div class="px-4 py-2 bg-blue-50 border-b border-blue-100">
-          <h3 class="text-sm font-semibold text-blue-800">
-            Saved Locations ({{ store.favorites.length }})
-          </h3>
-        </div>
-        
-        <!-- Favorites List -->
-        <div class="max-h-60 overflow-y-auto overscroll-contain py-1">
-          <div 
-            v-for="favorite in store.favorites"
-            :key="favorite.name"
-            @click="handleFavoriteClick(favorite.lat, favorite.lon)"
-            class="group relative cursor-pointer hover:bg-blue-50 transition-all duration-200"
-          >
-            <!-- Location Info -->
-            <div class="px-4 py-3 flex items-center gap-3">
-              <span class="text-blue-600">📍</span>
-              <div class="flex-1">
-                <span class="font-medium text-gray-800">{{ favorite.name }}</span>
-                <p class="text-xs text-gray-500">
-                  {{ favorite.lat.toFixed(2) }}°, {{ favorite.lon.toFixed(2) }}°
-                </p>
+                <!-- Suggestions Dropdown -->
+                <div
+                  v-if="showSuggestions && locationSuggestions.length > 0"
+                  class="absolute z-50 mt-2 inset-x-0 bg-white rounded-lg shadow-xl
+                        border border-blue-200 overflow-hidden max-h-60 overflow-y-auto"
+                >
+                <div
+                    v-for="suggestion in locationSuggestions"
+                    :key="suggestion.formatted"
+                    @click="handleSuggestionClick(suggestion.geometry.lat, suggestion.geometry.lng)"
+                    class="cursor-pointer px-4 py-2 hover:bg-blue-50 transition-colors duration-200"
+                >
+                  <p class="font-medium text-gray-800">
+                        {{ suggestion.formatted }}
+                    </p>
+                </div>
               </div>
-              
-              <!-- Remove Button -->
-              <button
-                @click="(e) => handleRemoveFavorite(e, favorite.name)"
-                class="p-1.5 rounded-full opacity-0 group-hover:opacity-100
+            </div>
+
+            <!-- Favorites Dropdown -->
+            <div
+                v-if="showFavorites && store.favorites.length > 0"
+                class="absolute z-50 mt-2 inset-x-0 bg-white rounded-lg shadow-xl
+                  border border-blue-200 overflow-hidden"
+            >
+                <!-- Dropdown Header -->
+                <div class="px-4 py-2 bg-blue-50 border-b border-blue-100">
+                    <h3 class="text-sm font-semibold text-blue-800">
+                        Saved Locations ({{ store.favorites.length }})
+                    </h3>
+                </div>
+
+                <!-- Favorites List -->
+                <div class="max-h-60 overflow-y-auto overscroll-contain py-1">
+                    <div
+                        v-for="favorite in store.favorites"
+                        :key="favorite.name"
+                        @click="handleFavoriteClick(favorite.lat, favorite.lon)"
+                        class="group relative cursor-pointer hover:bg-blue-50 transition-all duration-200"
+                    >
+                        <!-- Location Info -->
+                        <div class="px-4 py-3 flex items-center gap-3">
+                            <span class="text-blue-600">📍</span>
+                            <div class="flex-1">
+                                <span class="font-medium text-gray-800">{{ favorite.name }}</span>
+                                <p class="text-xs text-gray-500">
+                                    {{ favorite.lat.toFixed(2) }}°, {{ favorite.lon.toFixed(2) }}°
+                                </p>
+                            </div>
+
+                            <!-- Remove Button -->
+                            <button
+                                @click="(e) => handleRemoveFavorite(e, favorite.name)"
+                                class="p-1.5 rounded-full opacity-0 group-hover:opacity-100
                        hover:bg-red-100 hover:text-red-600
                        transition-all duration-200 text-gray-400"
-                title="Remove from favorites"
-              >
-                <span class="text-sm">✕</span>
-              </button>
+                                title="Remove from favorites"
+                            >
+                                <span class="text-sm">✕</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State (if needed) -->
+                <div v-if="store.favorites.length === 0"
+                     class="px-4 py-3 text-center text-gray-500 text-sm">
+                    No saved locations yet
+                </div>
             </div>
-          </div>
         </div>
 
-        <!-- Empty State (if needed) -->
-        <div v-if="store.favorites.length === 0" 
-             class="px-4 py-3 text-center text-gray-500 text-sm">
-          No saved locations yet
-        </div>
-      </div>
-    </div>
-
-    <!-- Error messages -->
-    <div v-if="errorMessage" 
-         class="mt-3 text-center"
-         role="alert">
-      <p class="text-red-500 bg-red-50 px-4 py-2 rounded-lg 
+        <!-- Error messages -->
+        <div v-if="errorMessage"
+             class="mt-3 text-center"
+             role="alert">
+            <p class="text-red-500 bg-red-50 px-4 py-2 rounded-lg
                 inline-block shadow-sm">
-        {{ errorMessage }}
-      </p>
+                {{ errorMessage }}
+            </p>
+        </div>
     </div>
-  </div>
 </template>
