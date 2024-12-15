@@ -40,7 +40,7 @@ export enum WeatherErrorType {
   NETWORK = 'NETWORK',
   API_LIMIT = 'API_LIMIT',
   LOCATION = 'LOCATION',
-  UNKNOWN = 'UNKNOWN'
+  UNKNOWN = 'UNKNOWN',
 }
 
 export interface WeatherError {
@@ -51,7 +51,7 @@ export interface WeatherError {
 export interface CacheEntry {
   data: WeatherData;
   timestamp: number;
-    lastAccessed: number;
+  lastAccessed: number;
   compressed: string;
 }
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import HomeView from './views/HomeView.vue'
-import DevTools from './components/DevTools.vue'
+  import HomeView from './views/HomeView.vue';
+  import DevTools from './components/DevTools.vue';
 </script>
 
 <template>
