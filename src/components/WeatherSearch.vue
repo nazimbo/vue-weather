@@ -41,6 +41,15 @@ const handleSearch = () => {
   debouncedSearch(searchQuery.value);
 };
 
+const handleManualSearch = async () => {
+  if (searchQuery.value.trim()) {
+      await store.fetchWeather(searchQuery.value.trim());
+      locationSuggestions.value = [];
+      showSuggestions.value = false;
+      inputRef.value?.blur();
+  }
+};
+
 const handleGetLocation = async () => {
   geoLocationError.value = null;
   showFavorites.value = false;
@@ -122,13 +131,15 @@ const handleSuggestionClick = async (lat: number, lon: number) => {
   showSuggestions.value = false;
   searchQuery.value = "";
   locationSuggestions.value = [];
-  inputRef.value?.blur(); // close the dropdown by removing focus
+    inputRef.value?.blur();
 };
 
+const handleInputBlur = useDebounceFn(() => {
+    setTimeout(() => {
+       showSuggestions.value = false;
+     }, 100)
+}, 100);
 
-const handleInputBlur = () => {
-    showSuggestions.value = false; // close the dropdown if the input loses focus
-}
 onMounted(() => {
   if(inputRef.value){
       inputRef.value.addEventListener("blur", handleInputBlur);
@@ -139,7 +150,7 @@ onUnmounted(() => {
     if (abortController.value) {
     abortController.value.abort();
     }
-    if(inputRef.value){
+     if(inputRef.value){
       inputRef.value.removeEventListener("blur", handleInputBlur);
   }
 });
@@ -156,6 +167,7 @@ onUnmounted(() => {
                     type="text"
                     placeholder="Enter city name..."
                     @input="handleSearch"
+                    @keyup.enter="handleManualSearch"
                     :disabled="isLoading"
                     class="w-full px-4 py-3 pr-32 rounded-lg
                  bg-white border border-blue-200/50
