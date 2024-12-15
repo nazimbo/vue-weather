@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue';
+import { ref, computed, onUnmounted, onMounted } from 'vue';
 import { useWeatherStore } from '../stores/weatherStore';
 import { useDebounceFn } from '@vueuse/core';
 import axios from 'axios';
@@ -12,8 +12,9 @@ const locationSuggestions = ref<any[]>([]);
 const showSuggestions = ref(false);
 const opencageApiKey = import.meta.env.VITE_OPENCAGE_API_KEY;
 const abortController = ref<AbortController | null>(null);
+const inputRef = ref<HTMLInputElement | null>(null);
 
-const MIN_SEARCH_LENGTH = 3; //Minimum number of characters before starting to get locations
+const MIN_SEARCH_LENGTH = 3;
 
 const debouncedSearch = useDebounceFn(async (query: string) => {
   if (query.trim().length >= MIN_SEARCH_LENGTH) {
@@ -121,14 +122,27 @@ const handleSuggestionClick = async (lat: number, lon: number) => {
   showSuggestions.value = false;
   searchQuery.value = "";
   locationSuggestions.value = [];
+  inputRef.value?.blur(); // close the dropdown by removing focus
 };
+
+
+const handleInputBlur = () => {
+    showSuggestions.value = false; // close the dropdown if the input loses focus
+}
+onMounted(() => {
+  if(inputRef.value){
+      inputRef.value.addEventListener("blur", handleInputBlur);
+  }
+})
 
 onUnmounted(() => {
     if (abortController.value) {
     abortController.value.abort();
     }
+    if(inputRef.value){
+      inputRef.value.removeEventListener("blur", handleInputBlur);
+  }
 });
-
 </script>
 
 <template>
@@ -137,6 +151,7 @@ onUnmounted(() => {
             <!-- Search Bar -->
             <div class="relative">
                 <input
+                    ref="inputRef"
                     v-model="searchQuery"
                     type="text"
                     placeholder="Enter city name..."
@@ -177,26 +192,25 @@ onUnmounted(() => {
                     </button>
                 </div>
 
-                <!-- Suggestions Dropdown -->
-                <div
+               <!-- Suggestions Dropdown -->
+              <div
                   v-if="showSuggestions && locationSuggestions.length > 0"
                   class="absolute z-50 mt-2 inset-x-0 bg-white rounded-lg shadow-xl
                         border border-blue-200 overflow-hidden max-h-60 overflow-y-auto"
                 >
-                <div
-                    v-for="suggestion in locationSuggestions"
-                    :key="suggestion.formatted"
-                    @click="handleSuggestionClick(suggestion.geometry.lat, suggestion.geometry.lng)"
-                    class="cursor-pointer px-4 py-2 hover:bg-blue-50 transition-colors duration-200"
-                >
-                  <p class="font-medium text-gray-800">
-                        {{ suggestion.formatted }}
-                    </p>
-                </div>
+                    <div
+                        v-for="suggestion in locationSuggestions"
+                        :key="suggestion.formatted"
+                        @click="handleSuggestionClick(suggestion.geometry.lat, suggestion.geometry.lng)"
+                        class="cursor-pointer px-4 py-2 hover:bg-blue-50 transition-colors duration-200"
+                    >
+                        <p class="font-medium text-gray-800">
+                            {{ suggestion.formatted }}
+                        </p>
+                    </div>
               </div>
             </div>
-
-            <!-- Favorites Dropdown -->
+              <!-- Favorites Dropdown -->
             <div
                 v-if="showFavorites && store.favorites.length > 0"
                 class="absolute z-50 mt-2 inset-x-0 bg-white rounded-lg shadow-xl
