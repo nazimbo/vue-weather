@@ -6,6 +6,7 @@ import type {
   WeatherData, 
   WeatherError,
   CacheEntry,
+  ForecastItem
 } from '../types/weather';
 import { WeatherErrorType } from '../types/weather';
 
@@ -208,29 +209,29 @@ export const useWeatherStore = defineStore('weather', {
     },
 
     processWeatherData(
-      currentWeather: any, 
-      forecast: any, 
-      airPollution?: any, 
+      currentWeather: any,
+      forecast: any,
+      airPollution?: any,
       uvData?: any
     ): WeatherData {
       // Process hourly data first (next 24 hours)
-      const hourlyData = forecast.data.list.slice(0, 8).map((item: any) => ({
-        time: new Date(item.dt * 1000).toLocaleTimeString([], { 
-          hour: '2-digit', 
-          minute: '2-digit' 
+      const hourlyData = forecast.data.list.slice(0, 8).map((item: ForecastItem) => ({
+        time: new Date(item.dt * 1000).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit'
         }),
         temp: Math.round(item.main.temp),
         icon: item.weather[0].icon,
         description: item.weather[0].description
       }));
     
-      // Process daily forecast data
-      const dailyForecasts = new Map<string, any[]>();
+      // Get today's date string
+      const todayStr = new Date().toISOString().split('T')[0];
       
-      // Debug logging
-      console.log('Total forecast items:', forecast.data.list.length);
+      // Process and group forecast data
+      const dailyForecasts = new Map<string, ForecastItem[]>();
       
-      forecast.data.list.forEach((item: any) => {
+      forecast.data.list.forEach((item: ForecastItem) => {
         const date = new Date(item.dt * 1000);
         const dateStr = date.toISOString().split('T')[0];
         
@@ -240,19 +241,14 @@ export const useWeatherStore = defineStore('weather', {
         dailyForecasts.get(dateStr)!.push(item);
       });
     
-      // Debug logging
-      console.log('Unique dates:', Array.from(dailyForecasts.keys()));
+      // Get today's forecast data for accurate min/max
+      const todayForecast = dailyForecasts.get(todayStr) || [];
+      const todayTemps = todayForecast.map(item => item.main.temp);
+      const todayTempMin = todayTemps.length ? Math.min(...todayTemps) : currentWeather.data.main.temp_min;
+      const todayTempMax = todayTemps.length ? Math.max(...todayTemps) : currentWeather.data.main.temp_max;
     
-      // Get today's date at start of day for comparison
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-    
-      // Process all dates except today
+      // Process all dates including today
       const processedForecast = Array.from(dailyForecasts.entries())
-        .filter(([dateStr]) => {
-          const forecastDate = new Date(dateStr);
-          return forecastDate > today;
-        })
         .map(([date, items]) => {
           const temps = items.map(item => item.main.temp);
           const maxTemp = Math.max(...temps);
@@ -268,10 +264,10 @@ export const useWeatherStore = defineStore('weather', {
             .reduce((a, b) => a[1] > b[1] ? a : b)[0];
           
           // Get the corresponding icon for the most common weather
-          const weatherIcon = items.find(item => 
+          const weatherIcon = items.find(item =>
             item.weather[0].description === mostCommonWeather
           )?.weather[0].icon || items[0].weather[0].icon;
-    
+      
           // Calculate average humidity and wind speed
           const avgHumidity = Math.round(
             items.reduce((sum, item) => sum + item.main.humidity, 0) / items.length
@@ -279,12 +275,12 @@ export const useWeatherStore = defineStore('weather', {
           const avgWindSpeed = Number(
             (items.reduce((sum, item) => sum + item.wind.speed, 0) / items.length).toFixed(1)
           );
-    
+      
           // Get highest precipitation probability for the day
           const maxPrecipitation = Math.round(
             Math.max(...items.map(item => (item.pop || 0) * 100))
           );
-    
+      
           return {
             date,
             temp: Math.round((maxTemp + minTemp) / 2),
@@ -299,10 +295,6 @@ export const useWeatherStore = defineStore('weather', {
         })
         .slice(0, 5); // Ensure we get exactly 5 days
     
-      // Debug logging
-      console.log('Processed forecast days:', processedForecast.length);
-      console.log('Forecast dates:', processedForecast.map(f => f.date));
-    
       return {
         city: currentWeather.data.name,
         coord: {
@@ -312,8 +304,8 @@ export const useWeatherStore = defineStore('weather', {
         current: {
           temp: Math.round(currentWeather.data.main.temp),
           feelsLike: Math.round(currentWeather.data.main.feels_like),
-          tempMin: Math.round(currentWeather.data.main.temp_min),
-          tempMax: Math.round(currentWeather.data.main.temp_max),
+          tempMin: Math.round(todayTempMin),
+          tempMax: Math.round(todayTempMax),
           humidity: currentWeather.data.main.humidity,
           windSpeed: currentWeather.data.wind.speed,
           description: currentWeather.data.weather[0].description,
