@@ -45,8 +45,8 @@ This is a real-time weather application built with Vue.js 3, TypeScript, and Tai
 1.  **Clone the repository:**
 
     ```bash
-    git clone [YOUR_REPOSITORY_URL]
-    cd [YOUR_PROJECT_DIRECTORY]
+    git clone https://github.com/nazimbo/vue-weather
+    cd vue-weather
     ```
 
 2.  **Install dependencies:**
