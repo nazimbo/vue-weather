@@ -3,12 +3,13 @@
   import { useWeatherStore } from '../stores/weatherStore';
   import { useDebounceFn } from '@vueuse/core';
   import axios from 'axios';
+  import type { OpenCageResult, OpenCageResponse } from '../types/openCage';
 
   const store = useWeatherStore();
   const searchQuery = ref('');
   const showFavorites = ref(false);
   const geoLocationError = ref<string | null>(null);
-  const locationSuggestions = ref<any[]>([]);
+  const locationSuggestions = ref<OpenCageResult[]>([]);
   const showSuggestions = ref(false);
   const opencageApiKey = import.meta.env.VITE_OPENCAGE_API_KEY;
   const abortController = ref<AbortController | null>(null);
@@ -109,11 +110,18 @@
     abortController.value = new AbortController();
 
     try {
-      const response = await axios.get(
+      const response = await axios.get<OpenCageResponse>(
         `https://api.opencagedata.com/geocode/v1/json?q=${query}&key=${opencageApiKey}&limit=5`,
         { signal: abortController.value.signal }
       );
-      locationSuggestions.value = response.data.results;
+
+      // Validate response structure
+      if (response.data && Array.isArray(response.data.results)) {
+        locationSuggestions.value = response.data.results;
+      } else {
+        console.error('Invalid OpenCage API response format', response.data);
+        locationSuggestions.value = [];
+      }
     } catch (error: any) {
       if (error.name !== 'AbortError') {
         console.error('Error fetching location suggestions:', error);
@@ -178,6 +186,7 @@
             class="p-2 rounded-lg bg-blue-600 text-white shadow-md hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-400"
             :class="{ 'bg-blue-700': showFavorites }"
             title="Show favorites"
+            aria-label="Show favorite locations"
           >
             ⭐
           </button>
@@ -188,6 +197,7 @@
             @click="handleGetLocation"
             class="p-2 rounded-lg bg-blue-600 text-white shadow-md hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-400"
             title="Use my location"
+            aria-label="Use my current location"
           >
             📍
           </button>
@@ -232,7 +242,7 @@
           >
             <!-- Location Info -->
             <div class="px-4 py-3 flex items-center gap-3">
-              <span class="text-blue-600">📍</span>
+              <span class="text-blue-600" aria-hidden="true">📍</span>
               <div class="flex-1">
                 <span class="font-medium text-gray-800">{{ favorite.name }}</span>
                 <p class="text-xs text-gray-500">
@@ -245,8 +255,9 @@
                 @click="(e) => handleRemoveFavorite(e, favorite.name)"
                 class="p-1.5 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 transition-all duration-200 text-gray-400"
                 title="Remove from favorites"
+                aria-label="Remove from favorites"
               >
-                <span class="text-sm">✕</span>
+                <span class="text-sm" aria-hidden="true">✕</span>
               </button>
             </div>
           </div>
