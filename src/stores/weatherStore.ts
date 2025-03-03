@@ -190,31 +190,19 @@ export const useWeatherStore = defineStore('weather', {
 
       const { lat, lon } = currentWeather.data.coord;
 
-      const [forecast, airPollution, uvData] = await Promise.all([
+      const [forecast, airPollution] = await Promise.all([
         this.fetchWithRetry(() => axios.get(`${BASE_URL}/forecast`, { params: requestParams })),
         this.fetchWithRetry(() =>
           axios.get(`${BASE_URL}/air_pollution`, {
             params: { lat, lon, appid: API_KEY },
           })
         ).catch(() => null),
-        this.fetchWithRetry(() =>
-          axios.get(`${BASE_URL}/uvi`, {
-            params: { lat, lon, appid: API_KEY },
-          })
-        ).catch(() => null),
       ]);
 
-      return { currentWeather, forecast, airPollution, uvData };
+      return { currentWeather, forecast, airPollution, uvData: undefined };
     },
 
-    // Inside processWeatherData method in weatherStore.ts
-
-    processWeatherData(
-      currentWeather: any,
-      forecast: any,
-      airPollution?: any,
-      uvData?: any
-    ): WeatherData {
+    processWeatherData(currentWeather: any, forecast: any, airPollution?: any): WeatherData {
       // Process hourly data first (next 24 hours)
       const hourlyData = forecast.data.list.slice(0, 8).map((item: ForecastItem) => ({
         time: new Date(item.dt * 1000).toLocaleTimeString([], {
@@ -337,7 +325,7 @@ export const useWeatherStore = defineStore('weather', {
           sunset: currentWeather.data.sys.sunset,
           pressure: currentWeather.data.main.pressure,
           visibility: currentWeather.data.visibility,
-          uvIndex: uvData?.data.value,
+          uvIndex: undefined,
           airQuality: airPollution
             ? {
                 aqi: airPollution.data.list[0].main.aqi,
@@ -382,15 +370,9 @@ export const useWeatherStore = defineStore('weather', {
       this.error = null;
 
       try {
-        const { currentWeather, forecast, airPollution, uvData } =
-          await this.makeWeatherRequests(params);
+        const { currentWeather, forecast, airPollution } = await this.makeWeatherRequests(params);
 
-        const processedData = this.processWeatherData(
-          currentWeather,
-          forecast,
-          airPollution,
-          uvData
-        );
+        const processedData = this.processWeatherData(currentWeather, forecast, airPollution);
 
         this.cache.set(cacheKey, {
           data: processedData,
