@@ -112,6 +112,13 @@ export const useWeatherStore = defineStore('weather', {
     },
 
     initializeCacheCleanup() {
+      // Clear any existing interval first to prevent multiple intervals
+      if (this.cacheCleanupInterval !== null) {
+        window.clearInterval(this.cacheCleanupInterval);
+        this.cacheCleanupInterval = null;
+      }
+
+      // Set a new interval
       this.cacheCleanupInterval = window.setInterval(
         () => {
           this.cleanCache();
@@ -133,10 +140,11 @@ export const useWeatherStore = defineStore('weather', {
       entriesToRemove.forEach(([key]) => this.cache.delete(key));
     },
 
-    // Add cleanup on store initialization
     initialize() {
-      // Changed from $onInit since Pinia uses different lifecycle
-      this.initializeCacheCleanup();
+      // Only initialize if not already initialized
+      if (this.cacheCleanupInterval === null) {
+        this.initializeCacheCleanup();
+      }
     },
 
     // Cleanup when store is no longer needed
