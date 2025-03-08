@@ -111,7 +111,7 @@
 
     try {
       const response = await axios.get<OpenCageResponse>(
-        `https://api.opencagedata.com/geocode/v1/json?q=${query}&key=${opencageApiKey}&limit=5`,
+        `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(query)}&key=${opencageApiKey}&limit=5`,
         { signal: abortController.value.signal }
       );
 
