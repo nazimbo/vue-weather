@@ -175,7 +175,7 @@
           @input="handleSearch"
           @keyup.enter="handleManualSearch"
           :disabled="isLoading"
-          class="w-full px-4 py-3 pr-32 rounded-lg bg-white border border-blue-200/50 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-500 text-gray-800 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          class="w-full px-4 py-3 pr-32 rounded-lg bg-white border border-blue-200/50 focus:outline-hidden focus:ring-2 focus:ring-blue-400 placeholder-gray-500 text-gray-800 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
         />
 
         <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
@@ -183,7 +183,7 @@
           <button
             v-if="!isLoading && store.favorites.length > 0"
             @click="toggleFavorites"
-            class="p-2 rounded-lg bg-blue-600 text-white shadow-md hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-400"
+            class="p-2 rounded-lg bg-blue-600 text-white shadow-md hover:bg-blue-700 transition-all focus:outline-hidden focus:ring-2 focus:ring-blue-400"
             :class="{ 'bg-blue-700': showFavorites }"
             title="Show favorites"
             aria-label="Show favorite locations"
@@ -195,7 +195,7 @@
           <button
             v-if="!isLoading"
             @click="handleGetLocation"
-            class="p-2 rounded-lg bg-blue-600 text-white shadow-md hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-400"
+            class="p-2 rounded-lg bg-blue-600 text-white shadow-md hover:bg-blue-700 transition-all focus:outline-hidden focus:ring-2 focus:ring-blue-400"
             title="Use my location"
             aria-label="Use my current location"
           >

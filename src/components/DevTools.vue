@@ -98,19 +98,19 @@
           <div class="flex gap-2">
             <button
               @click="clearAllData"
-              class="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors duration-200"
+              class="px-3 py-1.5 bg-red-600 text-white text-sm rounded-sm hover:bg-red-700 transition-colors duration-200"
             >
               Clear All Data
             </button>
             <button
               @click="clearCache"
-              class="px-3 py-1.5 bg-orange-500 text-white text-sm rounded hover:bg-orange-600 transition-colors duration-200"
+              class="px-3 py-1.5 bg-orange-500 text-white text-sm rounded-sm hover:bg-orange-600 transition-colors duration-200"
             >
               Clear Cache
             </button>
             <button
               @click="store.toggleUnit"
-              class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors duration-200"
+              class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors duration-200"
             >
               Toggle Unit
             </button>
