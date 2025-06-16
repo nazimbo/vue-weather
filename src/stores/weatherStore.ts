@@ -6,7 +6,6 @@ import type {
   WeatherData,
   WeatherError,
   CacheEntry,
-  ForecastItem,
 } from '../types/weather';
 import { WeatherErrorType } from '../types/weather';
 import { compress } from 'lz-string';
@@ -15,8 +14,8 @@ const FAVORITES_STORAGE_KEY = 'weather-favorites';
 const UNITS_STORAGE_KEY = 'weather-units';
 const MAX_CACHE_SIZE = 50; // Maximum number of cached locations
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
-const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
-const BASE_URL = import.meta.env.VITE_OPENWEATHER_BASE_URL;
+const WEATHER_BASE_URL = 'https://api.open-meteo.com/v1/forecast';
+const AIR_QUALITY_BASE_URL = 'https://air-quality-api.open-meteo.com/v1/air-quality';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
@@ -186,162 +185,262 @@ export const useWeatherStore = defineStore('weather', {
     },
 
     async makeWeatherRequests(params: WeatherParams) {
-      const requestParams = {
-        ...params,
-        units: this.selectedUnit,
-        appid: API_KEY,
-      };
-
-      const currentWeather = await this.fetchWithRetry(() =>
-        axios.get(`${BASE_URL}/weather`, { params: requestParams })
-      );
-
-      const { lat, lon } = currentWeather.data.coord;
-
-      const [forecast, airPollution] = await Promise.all([
-        this.fetchWithRetry(() => axios.get(`${BASE_URL}/forecast`, { params: requestParams })),
-        this.fetchWithRetry(() =>
-          axios.get(`${BASE_URL}/air_pollution`, {
-            params: { lat, lon, appid: API_KEY },
+      let lat: number, lon: number, cityName: string | undefined;
+      
+      // If we have a city name, we need to geocode it first
+      if (params.q) {
+        const geocodeResponse = await this.fetchWithRetry(() =>
+          axios.get('https://geocoding-api.open-meteo.com/v1/search', {
+            params: {
+              name: params.q,
+              count: 1,
+              language: 'en',
+              format: 'json'
+            }
           })
-        ).catch(() => null),
-      ]);
-
-      return { currentWeather, forecast, airPollution, uvData: undefined };
-    },
-
-    processWeatherData(currentWeather: any, forecast: any, airPollution?: any): WeatherData {
-      // Process hourly data first (next 24 hours)
-      const hourlyData = forecast.data.list.slice(0, 8).map((item: ForecastItem) => ({
-        time: new Date(item.dt * 1000).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-        temp: Math.round(item.main.temp),
-        icon: item.weather[0].icon,
-        description: item.weather[0].description,
-      }));
-
-      // Get current date at midnight for proper day boundary comparison
-      const now = new Date();
-      const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const tomorrowMidnight = new Date(todayMidnight);
-      tomorrowMidnight.setDate(tomorrowMidnight.getDate() + 1);
-
-      // Process and group forecast data by day
-      const dailyForecasts = new Map<string, ForecastItem[]>();
-
-      forecast.data.list.forEach((item: ForecastItem) => {
-        const itemDate = new Date(item.dt * 1000);
-        const dateStr = itemDate.toISOString().split('T')[0];
-
-        if (!dailyForecasts.has(dateStr)) {
-          dailyForecasts.set(dateStr, []);
+        );
+        
+        if (!geocodeResponse.data.results || geocodeResponse.data.results.length === 0) {
+          throw new Error('Location not found');
         }
-        dailyForecasts.get(dateStr)!.push(item);
-      });
-
-      // Get today's min/max temperatures
-      const todayStr = todayMidnight.toISOString().split('T')[0];
-      const todayForecast = dailyForecasts.get(todayStr) || [];
-
-      // Initialize min/max with current weather data
-      const currentTemp = currentWeather.data.main.temp;
-      let todayTempMin = currentWeather.data.main.temp_min;
-      let todayTempMax = currentWeather.data.main.temp_max;
-
-      // If we have forecast data for today, compare and take the most extreme values
-      if (todayForecast.length > 0) {
-        const todayTemps = todayForecast.map((item) => item.main.temp);
-        // Include current temps in the comparison
-        todayTemps.push(currentTemp, todayTempMin, todayTempMax);
-        todayTempMin = Math.min(...todayTemps);
-        todayTempMax = Math.max(...todayTemps);
+        
+        const location = geocodeResponse.data.results[0];
+        lat = location.latitude;
+        lon = location.longitude;
+        // Build city name from geocoding response
+        cityName = location.name;
+        if (location.admin1) {
+          cityName += `, ${location.admin1}`;
+        }
+        if (location.country) {
+          cityName += `, ${location.country}`;
+        }
+      } else {
+        lat = params.lat!;
+        lon = params.lon!;
+        // For coordinate-based requests, we'll try to get a city name using a free reverse geocoding service
+        try {
+          const reverseGeocodeResponse = await this.fetchWithRetry(() =>
+            axios.get(`https://api.bigdatacloud.net/data/reverse-geocode-client`, {
+              params: {
+                latitude: lat,
+                longitude: lon,
+                localityLanguage: 'en'
+              }
+            })
+          );
+          
+          if (reverseGeocodeResponse.data) {
+            const data = reverseGeocodeResponse.data;
+            if (data.city || data.locality) {
+              cityName = data.city || data.locality;
+              if (data.principalSubdivision) {
+                cityName += `, ${data.principalSubdivision}`;
+              }
+              if (data.countryName) {
+                cityName += `, ${data.countryName}`;
+              }
+            }
+          }
+        } catch (error) {
+          // If reverse geocoding fails, we'll fall back to coordinates
+          console.warn('Reverse geocoding failed:', error);
+        }
       }
 
-      // Process forecast for next 5 days
-      const processedForecast = Array.from(dailyForecasts.entries())
-        .filter(([dateStr]) => {
-          const forecastDate = new Date(dateStr);
-          return forecastDate >= todayMidnight;
-        })
-        .map(([date, items]) => {
-          // Calculate true min/max temperatures for each day
-          const temps = items.map((item) => item.main.temp);
-          const maxTemp = Math.max(...temps);
-          const minTemp = Math.min(...temps);
+      const temperatureUnit = this.selectedUnit === 'imperial' ? 'fahrenheit' : 'celsius';
+      const windSpeedUnit = this.selectedUnit === 'imperial' ? 'mph' : 'kmh';
+      const precipitationUnit = this.selectedUnit === 'imperial' ? 'inch' : 'mm';
 
-          // Get the most common weather condition for the day
-          const weatherCounts = new Map<string, number>();
-          items.forEach((item) => {
-            const desc = item.weather[0].description;
-            weatherCounts.set(desc, (weatherCounts.get(desc) || 0) + 1);
-          });
+      const weatherParams = {
+        latitude: lat,
+        longitude: lon,
+        current: [
+          'temperature_2m',
+          'relative_humidity_2m',
+          'apparent_temperature',
+          'weather_code',
+          'surface_pressure',
+          'wind_speed_10m',
+          'wind_direction_10m'
+        ].join(','),
+        hourly: [
+          'temperature_2m',
+          'weather_code',
+          'precipitation_probability'
+        ].join(','),
+        daily: [
+          'temperature_2m_max',
+          'temperature_2m_min',
+          'weather_code',
+          'precipitation_probability_max',
+          'wind_speed_10m_max',
+          'sunrise',
+          'sunset'
+        ].join(','),
+        temperature_unit: temperatureUnit,
+        wind_speed_unit: windSpeedUnit,
+        precipitation_unit: precipitationUnit,
+        timezone: 'auto',
+        forecast_days: 7
+      };
 
-          const mostCommonWeather = Array.from(weatherCounts.entries()).reduce((a, b) =>
-            a[1] > b[1] ? a : b
-          )[0];
+      const airQualityParams = {
+        latitude: lat,
+        longitude: lon,
+        current: ['pm10', 'pm2_5', 'carbon_monoxide', 'nitrogen_dioxide', 'ozone', 'european_aqi'].join(','),
+        hourly: ['pm10', 'pm2_5', 'carbon_monoxide', 'nitrogen_dioxide', 'ozone'].join(',')
+      };
 
-          // Get corresponding icon for most common weather
-          const weatherIcon =
-            items.find((item) => item.weather[0].description === mostCommonWeather)?.weather[0]
-              .icon || items[0].weather[0].icon;
+      const [weatherResponse, airQualityResponse] = await Promise.all([
+        this.fetchWithRetry(() => axios.get(WEATHER_BASE_URL, { params: weatherParams })),
+        this.fetchWithRetry(() => axios.get(AIR_QUALITY_BASE_URL, { params: airQualityParams })).catch(() => null),
+      ]);
 
-          // Calculate average humidity and wind speed
-          const avgHumidity = Math.round(
-            items.reduce((sum, item) => sum + item.main.humidity, 0) / items.length
-          );
-          const avgWindSpeed = Number(
-            (items.reduce((sum, item) => sum + item.wind.speed, 0) / items.length).toFixed(1)
-          );
+      return { 
+        weatherResponse, 
+        airQualityResponse, 
+        lat, 
+        lon,
+        cityName
+      };
+    },
 
-          // Get highest precipitation probability for the day
-          const maxPrecipitation = Math.round(
-            Math.max(...items.map((item) => (item.pop || 0) * 100))
-          );
-
-          return {
-            date,
-            temp: Math.round((maxTemp + minTemp) / 2),
-            tempMin: Math.round(minTemp),
-            tempMax: Math.round(maxTemp),
-            description: mostCommonWeather,
-            icon: weatherIcon,
-            humidity: avgHumidity,
-            windSpeed: avgWindSpeed,
-            precipitation: maxPrecipitation,
-          };
-        })
-        .slice(0, 5); // Ensure we get exactly 5 days
-
+    // Helper function to map Open-Meteo weather codes to descriptions and icons
+    getWeatherInfo(weatherCode: number, isNight: boolean = false) {
+      const weatherMap: Record<number, { description: string; dayIcon: string; nightIcon: string }> = {
+        0: { description: 'Clear sky', dayIcon: '01d', nightIcon: '01n' },
+        1: { description: 'Mainly clear', dayIcon: '01d', nightIcon: '01n' },
+        2: { description: 'Partly cloudy', dayIcon: '02d', nightIcon: '02n' },
+        3: { description: 'Overcast', dayIcon: '03d', nightIcon: '03n' },
+        45: { description: 'Fog', dayIcon: '50d', nightIcon: '50n' },
+        48: { description: 'Depositing rime fog', dayIcon: '50d', nightIcon: '50n' },
+        51: { description: 'Light drizzle', dayIcon: '09d', nightIcon: '09n' },
+        53: { description: 'Moderate drizzle', dayIcon: '09d', nightIcon: '09n' },
+        55: { description: 'Dense drizzle', dayIcon: '09d', nightIcon: '09n' },
+        56: { description: 'Light freezing drizzle', dayIcon: '09d', nightIcon: '09n' },
+        57: { description: 'Dense freezing drizzle', dayIcon: '09d', nightIcon: '09n' },
+        61: { description: 'Slight rain', dayIcon: '10d', nightIcon: '10n' },
+        63: { description: 'Moderate rain', dayIcon: '10d', nightIcon: '10n' },
+        65: { description: 'Heavy rain', dayIcon: '10d', nightIcon: '10n' },
+        66: { description: 'Light freezing rain', dayIcon: '13d', nightIcon: '13n' },
+        67: { description: 'Heavy freezing rain', dayIcon: '13d', nightIcon: '13n' },
+        71: { description: 'Slight snow fall', dayIcon: '13d', nightIcon: '13n' },
+        73: { description: 'Moderate snow fall', dayIcon: '13d', nightIcon: '13n' },
+        75: { description: 'Heavy snow fall', dayIcon: '13d', nightIcon: '13n' },
+        77: { description: 'Snow grains', dayIcon: '13d', nightIcon: '13n' },
+        80: { description: 'Slight rain showers', dayIcon: '09d', nightIcon: '09n' },
+        81: { description: 'Moderate rain showers', dayIcon: '09d', nightIcon: '09n' },
+        82: { description: 'Violent rain showers', dayIcon: '09d', nightIcon: '09n' },
+        85: { description: 'Slight snow showers', dayIcon: '13d', nightIcon: '13n' },
+        86: { description: 'Heavy snow showers', dayIcon: '13d', nightIcon: '13n' },
+        95: { description: 'Thunderstorm', dayIcon: '11d', nightIcon: '11n' },
+        96: { description: 'Thunderstorm with slight hail', dayIcon: '11d', nightIcon: '11n' },
+        99: { description: 'Thunderstorm with heavy hail', dayIcon: '11d', nightIcon: '11n' },
+      };
+      
+      const weather = weatherMap[weatherCode] || { description: 'Unknown', dayIcon: '01d', nightIcon: '01n' };
       return {
-        city: currentWeather.data.name,
+        description: weather.description,
+        icon: isNight ? weather.nightIcon : weather.dayIcon
+      };
+    },
+
+    processWeatherData(weatherResponse: any, airQualityResponse?: any, lat?: number, lon?: number, cityName?: string): WeatherData {
+      const data = weatherResponse.data;
+      
+      // Get city name from geocoding result or use coordinates
+      let cityDisplayName = cityName || `${lat?.toFixed(2)}, ${lon?.toFixed(2)}`;
+      
+      
+      // Process hourly data (next 24 hours)
+      const hourlyData = data.hourly.time.slice(0, 24).map((time: string, index: number) => {
+        const hourDateTime = new Date(time);
+        
+        // Determine if this hour is during night time
+        // We need to find the correct day's sunrise/sunset times
+        const hourDate = hourDateTime.toISOString().split('T')[0];
+        const dayIndex = data.daily.time.findIndex((dailyTime: string) => dailyTime === hourDate);
+        
+        let isNight = false;
+        if (dayIndex >= 0 && data.daily.sunrise && data.daily.sunset) {
+          const sunrise = new Date(data.daily.sunrise[dayIndex]);
+          const sunset = new Date(data.daily.sunset[dayIndex]);
+          isNight = hourDateTime < sunrise || hourDateTime > sunset;
+        }
+        
+        const weatherInfo = this.getWeatherInfo(data.hourly.weather_code[index], isNight);
+        return {
+          time: hourDateTime.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+          temp: Math.round(data.hourly.temperature_2m[index]),
+          icon: weatherInfo.icon,
+          description: weatherInfo.description,
+        };
+      });
+
+      // Process daily forecast data (next 5 days)
+      const processedForecast = data.daily.time.slice(0, 5).map((date: string, index: number) => {
+        const weatherInfo = this.getWeatherInfo(data.daily.weather_code[index]);
+        const tempMin = Math.round(data.daily.temperature_2m_min[index]);
+        const tempMax = Math.round(data.daily.temperature_2m_max[index]);
+        
+        return {
+          date,
+          temp: Math.round((tempMax + tempMin) / 2),
+          tempMin,
+          tempMax,
+          description: weatherInfo.description,
+          icon: weatherInfo.icon,
+          humidity: data.current.relative_humidity_2m || 0, // Use current humidity as daily average
+          windSpeed: data.daily.wind_speed_10m_max[index] || 0,
+          precipitation: Math.round(data.daily.precipitation_probability_max[index] || 0),
+        };
+      });
+
+      // Get current weather info
+      // Determine if it's currently night time
+      const now = new Date();
+      const todaySunrise = new Date(data.daily.sunrise[0]);
+      const todaySunset = new Date(data.daily.sunset[0]);
+      const isCurrentlyNight = now < todaySunrise || now > todaySunset;
+      
+      const currentWeatherInfo = this.getWeatherInfo(data.current.weather_code, isCurrentlyNight);
+      
+      // Calculate today's min/max from daily data (first day)
+      const todayTempMin = Math.round(data.daily.temperature_2m_min[0]);
+      const todayTempMax = Math.round(data.daily.temperature_2m_max[0]);
+      
+      return {
+        city: cityDisplayName,
         coord: {
-          lat: currentWeather.data.coord.lat,
-          lon: currentWeather.data.coord.lon,
+          lat: data.latitude,
+          lon: data.longitude,
         },
         current: {
-          temp: Math.round(currentTemp),
-          feelsLike: Math.round(currentWeather.data.main.feels_like),
-          tempMin: Math.round(todayTempMin),
-          tempMax: Math.round(todayTempMax),
-          humidity: currentWeather.data.main.humidity,
-          windSpeed: currentWeather.data.wind.speed,
-          description: currentWeather.data.weather[0].description,
-          icon: currentWeather.data.weather[0].icon,
-          sunrise: currentWeather.data.sys.sunrise,
-          sunset: currentWeather.data.sys.sunset,
-          pressure: currentWeather.data.main.pressure,
-          visibility: currentWeather.data.visibility,
+          temp: Math.round(data.current.temperature_2m),
+          feelsLike: Math.round(data.current.apparent_temperature),
+          tempMin: todayTempMin,
+          tempMax: todayTempMax,
+          humidity: Math.round(data.current.relative_humidity_2m),
+          windSpeed: data.current.wind_speed_10m,
+          description: currentWeatherInfo.description,
+          icon: currentWeatherInfo.icon,
+          sunrise: new Date(data.daily.sunrise[0]).getTime() / 1000,
+          sunset: new Date(data.daily.sunset[0]).getTime() / 1000,
+          pressure: Math.round(data.current.surface_pressure),
+          visibility: 10000, // Open-Meteo doesn't provide visibility, use default 10km
           uvIndex: undefined,
-          airQuality: airPollution
+          airQuality: airQualityResponse
             ? {
-                aqi: airPollution.data.list[0].main.aqi,
-                co: airPollution.data.list[0].components.co,
-                no2: airPollution.data.list[0].components.no2,
-                o3: airPollution.data.list[0].components.o3,
-                pm2_5: airPollution.data.list[0].components.pm2_5,
-                pm10: airPollution.data.list[0].components.pm10,
+                aqi: Math.round(airQualityResponse.data.current.european_aqi || 0),
+                co: Math.round(airQualityResponse.data.current.carbon_monoxide || 0),
+                no2: Math.round(airQualityResponse.data.current.nitrogen_dioxide || 0),
+                o3: Math.round(airQualityResponse.data.current.ozone || 0),
+                pm2_5: Math.round(airQualityResponse.data.current.pm2_5 || 0),
+                pm10: Math.round(airQualityResponse.data.current.pm10 || 0),
               }
             : undefined,
         },
@@ -355,15 +454,6 @@ export const useWeatherStore = defineStore('weather', {
     }, 1000),
 
     async fetchWeatherData(params: WeatherParams) {
-      if (!API_KEY) {
-        this.error = {
-          type: WeatherErrorType.UNKNOWN,
-          message: 'API key not configured',
-        };
-        console.error('OpenWeatherMap API key is not configured');
-        return;
-      }
-
       const cacheKey = this.getCacheKey(params);
       const cached = this.cache.get(cacheKey);
 
@@ -378,9 +468,9 @@ export const useWeatherStore = defineStore('weather', {
       this.error = null;
 
       try {
-        const { currentWeather, forecast, airPollution } = await this.makeWeatherRequests(params);
+        const { weatherResponse, airQualityResponse, lat, lon, cityName } = await this.makeWeatherRequests(params);
 
-        const processedData = this.processWeatherData(currentWeather, forecast, airPollution);
+        const processedData = this.processWeatherData(weatherResponse, airQualityResponse, lat, lon, cityName);
 
         this.cache.set(cacheKey, {
           data: processedData,

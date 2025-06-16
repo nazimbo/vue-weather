@@ -1,22 +1,26 @@
 # Vue.js Weather Application
 
-This is a real-time weather application built with Vue.js 3, TypeScript, and Tailwind CSS. It fetches weather data from the OpenWeatherMap API, providing current conditions, forecasts, and user-friendly features.
+This is a real-time weather application built with Vue.js 3, TypeScript, and Tailwind CSS. It fetches weather data from the Open-Meteo API, providing current conditions, forecasts, and user-friendly features with no API key required.
 
 ## Features
 
 - **Real-Time Weather Data:**
-  - Current weather conditions: temperature, humidity, wind speed, UV index, air quality.
+  - Current weather conditions: temperature, humidity, wind speed, air quality.
   - 5-day forecast with daily summaries.
-  - Hourly forecast for the next 24 hours.
+  - Hourly forecast for the next 24 hours with proper day/night icons.
 - **Search Functionality:**
   - Search weather by city name with autocomplete suggestions.
   - Fetch weather data for the user's current location using geolocation.
+  - Real-time location suggestions powered by Open-Meteo geocoding.
 - **Favorites Management:**
   - Save, view, and remove favorite locations.
   - Persist favorite locations using localStorage.
 - **Units Preference:**
-  - Switch between metric (Celsius, m/s) and imperial (Fahrenheit, mph) units.
+  - Switch between metric (Celsius, km/h) and imperial (Fahrenheit, mph) units.
   - Changes persist across sessions.
+- **Smart Icon System:**
+  - Dynamic day/night icons based on actual sunrise/sunset times.
+  - Accurate weather condition representations.
 - **Caching:**
   - Cache weather data for improved performance.
   - Automatic cleanup of expired cache entries.
@@ -34,8 +38,10 @@ This is a real-time weather application built with Vue.js 3, TypeScript, and Tai
   - API Integration: Axios
   - Utility library: @vueuse/core
 - **Backend Services:**
-  - Weather API: OpenWeatherMap
-  - Geocoding API: OpenCage
+  - Weather API: Open-Meteo (free, no API key required)
+  - Air Quality API: Open-Meteo
+  - Geocoding API: Open-Meteo
+  - Reverse Geocoding: BigDataCloud (for coordinate-based searches)
 - **Development Tools:**
   - Build Tool: Vite
   - Programming Language: TypeScript
@@ -55,21 +61,11 @@ This is a real-time weather application built with Vue.js 3, TypeScript, and Tai
     npm install
     ```
 
-3.  **Set up environment variables:**
+3.  **No API Keys Required:**
 
-    - Create a `.env` file in the root of your project.
-    - Add your OpenWeatherMap API key, OpenCage API key, and base URL.
-    - Example:
-
-      ```
-        VITE_OPENWEATHER_API_KEY=your_openweathermap_api_key
-        VITE_OPENWEATHER_BASE_URL=https://api.openweathermap.org/data/2.5
-        VITE_OPENCAGE_API_KEY=your_opencage_api_key
-      ```
-
-    - Get your API key here:
-      - [OpenWeatherMap](https://openweathermap.org/api)
-      - [OpenCage](https://opencagedata.com/)
+    - This application uses Open-Meteo APIs which are completely free and require no API keys.
+    - No environment variables need to be configured.
+    - Simply install dependencies and run the application!
 
 4.  **Run the development server:**
 
@@ -86,41 +82,82 @@ This is a real-time weather application built with Vue.js 3, TypeScript, and Tai
 6.  **Preview the production build:**
 
     ```bash
-     npm run preview
+    npm run preview
     ```
 
 ## API Integration
 
-- **Base URL:** `https://api.openweathermap.org/data/2.5`
-- **Endpoints:**
-  - Current weather: `/weather`
-  - 5-day forecast: `/forecast`
-  - Air pollution: `/air_pollution`
-  - UV index: `/uvi`
+### Weather Data - Open-Meteo
+- **Base URL:** `https://api.open-meteo.com/v1/forecast`
+- **Features:**
+  - Current weather conditions
+  - 7-day forecast with hourly data
+  - Multiple weather models for accuracy
+  - Temperature, humidity, wind, precipitation
 - **Parameters:**
-  - `q`: City name
-  - `lat, lon`: Coordinates
-  - `units`: Metric or imperial
-  - `appid`: API key
+  - `latitude, longitude`: Coordinates
+  - `current`: Current weather variables
+  - `hourly`: Hourly forecast variables
+  - `daily`: Daily forecast variables
+  - `temperature_unit`: celsius or fahrenheit
+  - `wind_speed_unit`: kmh or mph
+
+### Air Quality Data - Open-Meteo
+- **Base URL:** `https://air-quality-api.open-meteo.com/v1/air-quality`
+- **Features:**
+  - PM2.5, PM10 particulate matter
+  - CO, NO2, O3 gas concentrations
+  - European AQI index
+- **Parameters:**
+  - `latitude, longitude`: Coordinates
+  - `current`: Current air quality variables
+  - `hourly`: Hourly air quality data
+
+### Geocoding - Open-Meteo
+- **Base URL:** `https://geocoding-api.open-meteo.com/v1/search`
+- **Features:**
+  - City name to coordinates conversion
+  - Location search suggestions
+  - Multiple language support
+- **Parameters:**
+  - `name`: Location search query
+  - `count`: Number of results
+  - `language`: Response language
+  - `format`: Response format (json)
 
 ## Performance Considerations
 
 - **Caching:** Weather data is cached for 10 minutes, with a limit of 50 entries.
-- **Debouncing:** User input in the search bar is debounced to minimize API calls.
-- **Lazy Loading:** Non-critical components are lazy-loaded for faster initial load times.
-- **Throttling:** Fetch weather API calls are throttled to avoid too many requests in a short time.
+- **Debouncing:** User input in the search bar is debounced (500ms) to minimize API calls.
+- **Request Cancellation:** Search suggestions automatically cancel previous requests when typing rapidly.
+- **Throttling:** Weather API calls are throttled (1 second) to prevent excessive requests.
+- **Retry Logic:** Failed requests are automatically retried up to 3 times for server errors.
+- **Compressed Storage:** Cache entries are compressed using LZ-string for memory efficiency.
 
 ## Validation and Error Handling
 
 - Input validation to ensure city name input is not empty and coordinates are valid.
-- Meaningful error messages displayed for various scenarios.
-- API calls have retry mechanisms for server-related errors.
+- Meaningful error messages displayed for various scenarios (network errors, location not found, etc.).
+- API calls have retry mechanisms for server-related errors (500+ status codes).
+- Graceful degradation when air quality data is unavailable.
+- Fallback to coordinates display when location name cannot be determined.
+
+## Why Open-Meteo?
+
+- **Completely Free:** No API key registration or credit card required
+- **High Quality Data:** Uses multiple national weather services (ECMWF, NOAA, Météo-France)
+- **Open Source:** Transparent and community-driven weather API
+- **Reliable:** No rate limits or usage restrictions for non-commercial use
+- **Comprehensive:** Weather, air quality, and geocoding all in one ecosystem
+- **Privacy Friendly:** No tracking or data collection
 
 ## Future Enhancements
 
-- Weather alerts for severe conditions.
-- Offline support for cached data.
-- Interactive map integration for visual location selection.
+- Weather alerts and severe condition notifications
+- Offline support with cached data persistence
+- Interactive map integration for visual location selection
+- Historical weather data analysis
+- Weather data export functionality
 
 ## Contributing
 

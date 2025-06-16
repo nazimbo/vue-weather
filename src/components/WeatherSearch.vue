@@ -3,15 +3,13 @@
   import { useWeatherStore } from '../stores/weatherStore';
   import { useDebounceFn } from '@vueuse/core';
   import axios from 'axios';
-  import type { OpenCageResult, OpenCageResponse } from '../types/openCage';
 
   const store = useWeatherStore();
   const searchQuery = ref('');
   const showFavorites = ref(false);
   const geoLocationError = ref<string | null>(null);
-  const locationSuggestions = ref<OpenCageResult[]>([]);
+  const locationSuggestions = ref<any[]>([]);
   const showSuggestions = ref(false);
-  const opencageApiKey = import.meta.env.VITE_OPENCAGE_API_KEY;
   const abortController = ref<AbortController | null>(null);
   const inputRef = ref<HTMLInputElement | null>(null);
 
@@ -99,10 +97,6 @@
   };
 
   const fetchLocationSuggestions = async (query: string) => {
-    if (!opencageApiKey) {
-      console.error('OpenCage API key is not configured');
-      return;
-    }
     if (abortController.value) {
       abortController.value.abort();
     }
@@ -110,20 +104,31 @@
     abortController.value = new AbortController();
 
     try {
-      const response = await axios.get<OpenCageResponse>(
-        `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(query)}&key=${opencageApiKey}&limit=5`,
+      const response = await axios.get(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`,
         { signal: abortController.value.signal }
       );
 
-      // Validate response structure
+      // Validate response structure and transform to match expected format
       if (response.data && Array.isArray(response.data.results)) {
-        locationSuggestions.value = response.data.results;
+        // Transform Open Meteo results to match the expected OpenCage format
+        locationSuggestions.value = response.data.results.map((result: any) => ({
+          formatted: `${result.name}${result.admin1 ? `, ${result.admin1}` : ''}${result.country ? `, ${result.country}` : ''}`,
+          geometry: {
+            lat: result.latitude,
+            lng: result.longitude
+          },
+          components: {
+            city: result.name,
+            state: result.admin1,
+            country: result.country
+          }
+        }));
       } else {
-        console.error('Invalid OpenCage API response format', response.data);
         locationSuggestions.value = [];
       }
     } catch (error: any) {
-      if (error.name !== 'AbortError') {
+      if (error.name !== 'AbortError' && error.name !== 'CanceledError') {
         console.error('Error fetching location suggestions:', error);
         locationSuggestions.value = [];
       }
