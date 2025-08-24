@@ -70,33 +70,6 @@ export interface WeatherState {
   selectedUnit: 'metric' | 'imperial';
 }
 
-export interface WeatherAlert {
-  type: string;
-  description: string;
-  severity: 'low' | 'medium' | 'high';
-  start: number;
-  end: number;
-}
-
-export interface ForecastItem {
-  dt: number;
-  main: {
-    temp: number;
-    temp_min: number;
-    temp_max: number;
-    humidity: number;
-    pressure: number;
-  };
-  weather: Array<{
-    description: string;
-    icon: string;
-  }>;
-  wind: {
-    speed: number;
-  };
-  pop?: number; // Probability of precipitation
-}
-
 interface ProcessedForecast {
   date: string;
   temp: number;

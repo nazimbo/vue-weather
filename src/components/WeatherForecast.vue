@@ -13,24 +13,6 @@
     return store.selectedUnit === 'metric' ? 'm/s' : 'mph';
   });
 
-  // Get gradient colors based on weather description
-  const getWeatherColor = (description: string): string => {
-    const lowerDesc = description.toLowerCase();
-
-    if (lowerDesc.includes('thunderstorm')) return 'from-gray-700 to-gray-900';
-    if (lowerDesc.includes('drizzle')) return 'from-blue-200 to-blue-300';
-    if (lowerDesc.includes('rain')) return 'from-blue-300 to-blue-400';
-    if (lowerDesc.includes('snow')) return 'from-indigo-100 to-indigo-200';
-    if (lowerDesc.includes('mist') || lowerDesc.includes('fog')) return 'from-gray-200 to-gray-300';
-    if (lowerDesc.includes('smoke') || lowerDesc.includes('haze'))
-      return 'from-gray-300 to-gray-400';
-    if (lowerDesc.includes('dust') || lowerDesc.includes('sand'))
-      return 'from-yellow-200 to-yellow-300';
-    if (lowerDesc.includes('clear')) return 'from-sky-200 to-sky-300';
-    if (lowerDesc.includes('cloud')) return 'from-gray-100 to-gray-200';
-
-    return 'from-blue-100 to-blue-200';
-  };
 
   // Format date to more readable format
   const formatDate = (dateStr: string): string => {
