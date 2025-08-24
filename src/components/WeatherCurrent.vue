@@ -21,11 +21,11 @@
 <template>
   <div
     v-if="store.weatherData"
-    class="bg-gradient-to-r from-blue-100 to-blue-300 rounded-xl p-6 mb-8 transition-all duration-300 shadow-lg"
+    class="bg-white/10 backdrop-blur-md rounded-3xl p-8 mb-12 transition-all duration-300 shadow-2xl border border-white/20 hover:bg-white/15"
   >
     <!-- Header with City and Favorites -->
     <div class="flex justify-between items-center mb-6">
-      <h2 class="text-4xl font-bold text-gray-800">
+      <h2 class="text-4xl font-bold text-white drop-shadow-lg">
         {{ store.weatherData.city }}
       </h2>
       <div class="flex gap-4">
@@ -40,7 +40,7 @@
             }
           "
           :disabled="store.loading"
-          class="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-4 py-2 bg-white/20 backdrop-blur-md text-white rounded-xl hover:bg-white/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 border border-white/30"
         >
           {{ store.selectedUnit.toUpperCase() }}
         </button>
@@ -48,7 +48,7 @@
           @click="
             isFavorite ? store.removeFromFavorites(store.weatherData.city) : store.addToFavorites()
           "
-          class="p-2 rounded-full hover:bg-blue-200 transition-colors duration-200"
+          class="p-2 rounded-full hover:bg-white/20 transition-all duration-200 transform hover:scale-110"
           :title="isFavorite ? 'Remove from favorites' : 'Add to favorites'"
         >
           <span class="text-2xl">{{ isFavorite ? '⭐' : '☆' }}</span>
@@ -64,78 +64,78 @@
           {{ store.weatherData.current.icon }}
         </div>
         <div>
-          <div class="text-6xl font-extrabold text-blue-700">
+          <div class="text-6xl font-extrabold text-white drop-shadow-lg">
             {{ formatters.temperature(store.weatherData.current.temp, store.selectedUnit) }}
           </div>
-          <div class="text-xl text-gray-600">
+          <div class="text-xl text-white/80">
             Feels like
             {{ formatters.temperature(store.weatherData.current.feelsLike, store.selectedUnit) }}
           </div>
-          <p class="text-lg text-gray-600 capitalize italic">
+          <p class="text-lg text-white/90 capitalize italic">
             {{ store.weatherData.current.description }}
           </p>
         </div>
       </div>
 
       <!-- Temperature Range and Basic Info -->
-      <div class="grid grid-cols-2 gap-4 bg-white/30 rounded-lg p-4">
+      <div class="grid grid-cols-2 gap-4 bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
         <div>
           <div class="flex items-center gap-2 mb-2">
             <span class="text-red-500">↑</span>
-            <span class="font-semibold">
+            <span class="font-semibold text-white">
               {{ formatters.temperature(store.weatherData.current.tempMax, store.selectedUnit) }}
             </span>
           </div>
           <div class="flex items-center gap-2">
             <span class="text-blue-500">↓</span>
-            <span class="font-semibold">
+            <span class="font-semibold text-white">
               {{ formatters.temperature(store.weatherData.current.tempMin, store.selectedUnit) }}
             </span>
           </div>
         </div>
         <div>
           <div class="mb-2">
-            <span class="text-blue-700">💨 Wind</span>
-            <p>
+            <span class="text-blue-300">💨 Wind</span>
+            <p class="text-white">
               {{ formatters.windSpeed(store.weatherData.current.windSpeed, store.selectedUnit) }}
             </p>
           </div>
           <div>
-            <span class="text-blue-700">💧 Humidity</span>
-            <p>{{ store.weatherData.current.humidity }}%</p>
+            <span class="text-blue-300">💧 Humidity</span>
+            <p class="text-white">{{ store.weatherData.current.humidity }}%</p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Detailed Weather Information -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <!-- Sun Times -->
-      <div class="bg-white/30 rounded-lg p-4">
-        <h3 class="font-semibold text-gray-700 mb-2">Sun Schedule</h3>
+      <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+        <h3 class="font-semibold text-white mb-3">Sun Schedule</h3>
         <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between">
-            <span class="text-amber-600">🌅 Sunrise</span>
-            <span>{{ formatters.time(store.weatherData.current.sunrise) }}</span>
+            <span class="text-amber-300">🌅 Sunrise</span>
+            <span class="text-white">{{ formatters.time(store.weatherData.current.sunrise) }}</span>
           </div>
           <div class="flex items-center justify-between">
-            <span class="text-amber-800">🌇 Sunset</span>
-            <span>{{ formatters.time(store.weatherData.current.sunset) }}</span>
+            <span class="text-amber-400">🌇 Sunset</span>
+            <span class="text-white">{{ formatters.time(store.weatherData.current.sunset) }}</span>
           </div>
         </div>
       </div>
 
       <!-- Additional Info -->
-      <div class="bg-white/30 rounded-lg p-4">
-        <h3 class="font-semibold text-gray-700 mb-2">Additional Info</h3>
+      <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+        <h3 class="font-semibold text-white mb-3">Additional Info</h3>
         <div class="grid grid-cols-2 gap-y-2">
           <div>
-            <span class="text-blue-700">👁️ Visibility</span>
-            <p>{{ formatters.visibility(store.weatherData.current.visibility) }}</p>
+            <span class="text-blue-300">👁️ Visibility</span>
+            <p class="text-white">{{ formatters.visibility(store.weatherData.current.visibility) }}</p>
           </div>
           <div>
-            <span class="text-blue-700">⏲️ Pressure</span>
-            <p>{{ store.weatherData.current.pressure }} hPa</p>
+            <span class="text-blue-300">⏲️ Pressure</span>
+            <p class="text-white">{{ store.weatherData.current.pressure }} hPa</p>
           </div>
         </div>
       </div>
@@ -143,16 +143,16 @@
       <!-- Air Quality and UV -->
       <div
         v-if="store.weatherData.current.airQuality || store.weatherData.current.uvIndex"
-        class="bg-white/30 rounded-lg p-4"
+        class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20"
       >
-        <h3 class="font-semibold text-gray-700 mb-2">Air & UV</h3>
+        <h3 class="font-semibold text-white mb-3">Air & UV</h3>
         <div class="flex flex-col gap-2">
           <div v-if="store.weatherData.current.airQuality">
-            <span class="text-blue-700">AQI</span>
-            <p>{{ store.weatherData.current.airQuality.aqi }}/5</p>
+            <span class="text-blue-300">AQI</span>
+            <p class="text-white">{{ store.weatherData.current.airQuality.aqi }}/5</p>
           </div>
           <div v-if="store.weatherData.current.uvIndex">
-            <span class="text-blue-700">UV Index</span>
+            <span class="text-blue-300">UV Index</span>
             <p :class="getUVInfo(store.weatherData.current.uvIndex).color">
               {{ store.weatherData.current.uvIndex }}
               ({{ getUVInfo(store.weatherData.current.uvIndex).level }})

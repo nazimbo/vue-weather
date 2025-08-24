@@ -11,9 +11,11 @@
 <template>
   <div class="max-w-6xl mx-auto px-4 py-8">
     <!-- Header -->
-    <header class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-blue-800 mb-2">Weather App</h1>
-      <p class="text-gray-600">Get detailed weather information for any location</p>
+    <header class="text-center mb-12">
+      <h1 class="text-5xl md:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4 drop-shadow-lg">
+        Weather App
+      </h1>
+      <p class="text-gray-300 text-lg md:text-xl font-light">Get detailed weather information for any location</p>
     </header>
 
     <!-- Search Component -->
@@ -29,11 +31,11 @@
         </div>
       </template>
       <template #fallback>
-        <div class="text-center text-gray-600 my-8">
+        <div class="text-center text-white/80 my-12">
           <div
-            class="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"
+            class="animate-spin rounded-full h-16 w-16 border-4 border-blue-400/30 border-t-blue-400 mx-auto mb-6 glow-animation"
           ></div>
-          <p>Loading weather information...</p>
+          <p class="text-lg">Loading weather information...</p>
         </div>
       </template>
     </Suspense>

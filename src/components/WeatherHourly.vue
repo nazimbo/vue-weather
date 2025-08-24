@@ -10,24 +10,24 @@
 </script>
 
 <template>
-  <div v-if="store.weatherData?.hourlyForecast" class="bg-white/20 rounded-xl p-6 mb-8 shadow-lg">
-    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Next 24 Hours</h3>
+  <div v-if="store.weatherData?.hourlyForecast" class="bg-white/10 backdrop-blur-md rounded-3xl p-8 mb-12 shadow-2xl border border-white/20">
+    <h3 class="text-2xl font-semibold text-white mb-6 drop-shadow-lg">Next 24 Hours</h3>
 
     <div class="overflow-x-auto">
-      <div class="flex gap-4 min-w-max pb-2">
+      <div class="flex gap-6 min-w-max pb-2">
         <div
           v-for="hour in store.weatherData.hourlyForecast"
           :key="hour.time"
-          class="flex flex-col items-center bg-white/30 rounded-lg p-4 min-w-[120px] transition-transform hover:scale-105"
+          class="flex flex-col items-center bg-white/20 backdrop-blur-sm rounded-2xl p-6 min-w-[140px] transition-all duration-300 hover:scale-110 hover:bg-white/30 border border-white/20 shadow-lg"
         >
-          <span class="text-gray-600 font-medium mb-2">{{ hour.time }}</span>
-          <div class="text-3xl mb-2">
+          <span class="text-white/80 font-semibold mb-3 text-sm">{{ hour.time }}</span>
+          <div class="text-4xl mb-3 transform transition-transform hover:scale-110">
             {{ hour.icon }}
           </div>
-          <span class="text-xl font-bold text-blue-700">
+          <span class="text-xl font-bold text-white mb-2">
             {{ hour.temp }}{{ temperatureUnit }}
           </span>
-          <span class="text-sm text-gray-600 capitalize mt-1">
+          <span class="text-xs text-white/70 capitalize text-center leading-tight">
             {{ hour.description }}
           </span>
         </div>

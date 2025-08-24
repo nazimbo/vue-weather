@@ -82,22 +82,18 @@
 </script>
 
 <template>
-  <div v-if="store.weatherData" class="mt-8">
-    <h3 class="text-3xl font-semibold text-gray-800 mb-6 text-center">5-Day Forecast</h3>
+  <div v-if="store.weatherData" class="mt-12">
+    <h3 class="text-3xl font-semibold text-white mb-8 text-center drop-shadow-lg">5-Day Forecast</h3>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
       <div
         v-for="day in store.weatherData.forecast"
         :key="day.date"
-        :class="[
-          `bg-gradient-to-br ${getWeatherColor(day.description)} rounded-lg p-4`,
-          'shadow-lg transition-all duration-300 hover:scale-105',
-          'hover:shadow-xl border border-white/20',
-        ]"
+        class="bg-white/10 backdrop-blur-md rounded-3xl p-6 shadow-2xl transition-all duration-300 hover:scale-105 hover:bg-white/15 border border-white/20 hover:border-white/40"
       >
         <!-- Date Header -->
-        <div class="text-center border-b border-white/20 pb-2 mb-3">
-          <p class="font-medium text-gray-700">
+        <div class="text-center border-b border-white/30 pb-3 mb-4">
+          <p class="font-semibold text-white text-lg">
             {{ formatDate(day.date) }}
           </p>
         </div>
@@ -107,30 +103,30 @@
           <div class="flex justify-center items-center">
             <span class="text-4xl">{{ day.icon }}</span>
           </div>
-          <p class="text-sm text-gray-600 capitalize font-medium">
+          <p class="text-sm text-white/80 capitalize font-medium">
             {{ day.description }}
           </p>
         </div>
 
         <!-- Temperature Range -->
-        <div class="flex justify-center gap-4 mb-4 font-bold">
+        <div class="flex justify-center gap-4 mb-6 font-bold">
           <div class="text-center">
-            <span class="text-red-600 text-sm block">High</span>
-            <span class="text-lg">{{ day.tempMax }}{{ temperatureUnit }}</span>
+            <span class="text-red-300 text-sm block font-medium">High</span>
+            <span class="text-xl text-white">{{ day.tempMax }}{{ temperatureUnit }}</span>
           </div>
-          <div class="text-gray-300">|</div>
+          <div class="text-white/50">|</div>
           <div class="text-center">
-            <span class="text-blue-600 text-sm block">Low</span>
-            <span class="text-lg">{{ day.tempMin }}{{ temperatureUnit }}</span>
+            <span class="text-blue-300 text-sm block font-medium">Low</span>
+            <span class="text-xl text-white">{{ day.tempMin }}{{ temperatureUnit }}</span>
           </div>
         </div>
 
         <!-- Weather Details -->
-        <div class="grid grid-cols-2 gap-2 text-sm border-t border-white/20 pt-3">
+        <div class="grid grid-cols-2 gap-3 text-sm border-t border-white/30 pt-4">
           <!-- Humidity -->
           <div class="text-center">
-            <span class="text-gray-600 block">Humidity</span>
-            <div class="font-medium flex items-center justify-center gap-1">
+            <span class="text-white/70 block font-medium">Humidity</span>
+            <div class="font-semibold flex items-center justify-center gap-1 text-white">
               <span>💧</span>
               <span>{{ day.humidity }}%</span>
             </div>
@@ -138,28 +134,28 @@
 
           <!-- Wind -->
           <div class="text-center">
-            <span class="text-gray-600 block">Wind</span>
-            <div class="font-medium flex items-center justify-center gap-1">
+            <span class="text-white/70 block font-medium">Wind</span>
+            <div class="font-semibold flex items-center justify-center gap-1 text-white">
               <span>💨</span>
               <span>{{ day.windSpeed }} {{ windSpeedUnit }}</span>
             </div>
           </div>
 
           <!-- Precipitation -->
-          <div class="col-span-2 text-center mt-2">
-            <span class="text-gray-600 block">Rain Chance</span>
-            <div class="font-medium flex items-center justify-center gap-1">
+          <div class="col-span-2 text-center mt-3">
+            <span class="text-white/70 block font-medium">Rain Chance</span>
+            <div class="font-semibold flex items-center justify-center gap-1 text-white">
               <span>🌧️</span>
               <span>{{ day.precipitation }}%</span>
             </div>
-            <p class="text-xs text-gray-500 mt-1">
+            <p class="text-xs text-white/60 mt-1">
               {{ getPrecipitationAdvice(day.precipitation) }}
             </p>
           </div>
 
           <!-- Wind Description -->
           <div class="col-span-2 text-center mt-2">
-            <p class="text-xs text-gray-500 italic">
+            <p class="text-xs text-white/60 italic">
               {{ getWindDescription(day.windSpeed) }}
             </p>
           </div>

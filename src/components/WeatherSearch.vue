@@ -180,7 +180,7 @@
           @input="handleSearch"
           @keyup.enter="handleManualSearch"
           :disabled="isLoading"
-          class="w-full px-4 py-3 pr-32 rounded-lg bg-white border border-blue-200/50 focus:outline-hidden focus:ring-2 focus:ring-blue-400 placeholder-gray-500 text-gray-800 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          class="w-full px-6 py-4 pr-32 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 focus:outline-hidden focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 placeholder-white/70 text-white shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:bg-white/25"
         />
 
         <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
@@ -188,8 +188,8 @@
           <button
             v-if="!isLoading && store.favorites.length > 0"
             @click="toggleFavorites"
-            class="p-2 rounded-lg bg-blue-600 text-white shadow-md hover:bg-blue-700 transition-all focus:outline-hidden focus:ring-2 focus:ring-blue-400"
-            :class="{ 'bg-blue-700': showFavorites }"
+            class="p-3 rounded-xl bg-white/20 backdrop-blur-md text-white shadow-lg hover:bg-white/30 transition-all focus:outline-hidden focus:ring-2 focus:ring-blue-400/50 transform hover:scale-105"
+            :class="{ 'bg-white/30 scale-105': showFavorites }"
             title="Show favorites"
             aria-label="Show favorite locations"
           >
@@ -200,7 +200,7 @@
           <button
             v-if="!isLoading"
             @click="handleGetLocation"
-            class="p-2 rounded-lg bg-blue-600 text-white shadow-md hover:bg-blue-700 transition-all focus:outline-hidden focus:ring-2 focus:ring-blue-400"
+            class="p-3 rounded-xl bg-white/20 backdrop-blur-md text-white shadow-lg hover:bg-white/30 transition-all focus:outline-hidden focus:ring-2 focus:ring-blue-400/50 transform hover:scale-105"
             title="Use my location"
             aria-label="Use my current location"
           >
@@ -211,15 +211,15 @@
         <!-- Suggestions Dropdown -->
         <div
           v-if="showSuggestions && locationSuggestions.length > 0"
-          class="absolute z-50 mt-2 inset-x-0 bg-white rounded-lg shadow-xl border border-blue-200 overflow-hidden max-h-60 overflow-y-auto"
+          class="absolute z-50 mt-2 inset-x-0 bg-white/20 backdrop-blur-md rounded-2xl shadow-2xl border border-white/30 overflow-hidden max-h-60 overflow-y-auto"
         >
           <div
             v-for="suggestion in locationSuggestions"
             :key="suggestion.formatted"
             @click="handleSuggestionClick(suggestion.geometry.lat, suggestion.geometry.lng)"
-            class="cursor-pointer px-4 py-2 hover:bg-blue-50 transition-colors duration-200"
+            class="cursor-pointer px-4 py-3 hover:bg-white/30 transition-colors duration-200"
           >
-            <p class="font-medium text-gray-800">
+            <p class="font-medium text-white">
               {{ suggestion.formatted }}
             </p>
           </div>
@@ -228,11 +228,11 @@
       <!-- Favorites Dropdown -->
       <div
         v-if="showFavorites && store.favorites.length > 0"
-        class="absolute z-50 mt-2 inset-x-0 bg-white rounded-lg shadow-xl border border-blue-200 overflow-hidden"
+        class="absolute z-50 mt-2 inset-x-0 bg-white/20 backdrop-blur-md rounded-2xl shadow-2xl border border-white/30 overflow-hidden"
       >
         <!-- Dropdown Header -->
-        <div class="px-4 py-2 bg-blue-50 border-b border-blue-100">
-          <h3 class="text-sm font-semibold text-blue-800">
+        <div class="px-4 py-3 bg-white/10 border-b border-white/20">
+          <h3 class="text-sm font-semibold text-white">
             Saved Locations ({{ store.favorites.length }})
           </h3>
         </div>
@@ -243,14 +243,14 @@
             v-for="favorite in store.favorites"
             :key="favorite.name"
             @click="handleFavoriteClick(favorite.lat, favorite.lon)"
-            class="group relative cursor-pointer hover:bg-blue-50 transition-all duration-200"
+            class="group relative cursor-pointer hover:bg-white/30 transition-all duration-200"
           >
             <!-- Location Info -->
             <div class="px-4 py-3 flex items-center gap-3">
-              <span class="text-blue-600" aria-hidden="true">📍</span>
+              <span class="text-blue-400" aria-hidden="true">📍</span>
               <div class="flex-1">
-                <span class="font-medium text-gray-800">{{ favorite.name }}</span>
-                <p class="text-xs text-gray-500">
+                <span class="font-medium text-white">{{ favorite.name }}</span>
+                <p class="text-xs text-white/70">
                   {{ favorite.lat.toFixed(2) }}°, {{ favorite.lon.toFixed(2) }}°
                 </p>
               </div>
@@ -258,7 +258,7 @@
               <!-- Remove Button -->
               <button
                 @click="(e) => handleRemoveFavorite(e, favorite.name)"
-                class="p-1.5 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 transition-all duration-200 text-gray-400"
+                class="p-1.5 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200 text-white/60"
                 title="Remove from favorites"
                 aria-label="Remove from favorites"
               >
@@ -271,7 +271,7 @@
         <!-- Empty State (if needed) -->
         <div
           v-if="store.favorites.length === 0"
-          class="px-4 py-3 text-center text-gray-500 text-sm"
+          class="px-4 py-3 text-center text-white/70 text-sm"
         >
           No saved locations yet
         </div>
@@ -279,8 +279,8 @@
     </div>
 
     <!-- Error messages -->
-    <div v-if="errorMessage" class="mt-3 text-center" role="alert">
-      <p class="text-red-500 bg-red-50 px-4 py-2 rounded-lg inline-block shadow-sm">
+    <div v-if="errorMessage" class="mt-4 text-center" role="alert">
+      <p class="text-red-300 bg-red-500/20 backdrop-blur-md px-6 py-3 rounded-2xl inline-block shadow-xl border border-red-500/30">
         {{ errorMessage }}
       </p>
     </div>
