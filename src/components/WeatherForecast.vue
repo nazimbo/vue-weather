@@ -50,20 +50,6 @@
     }
   };
 
-  // Get weather icon class based on description and time
-  const getWeatherIcon = (description: string): string => {
-    const lowerDesc = description.toLowerCase();
-
-    if (lowerDesc.includes('thunderstorm')) return '⛈️';
-    if (lowerDesc.includes('drizzle')) return '🌧️';
-    if (lowerDesc.includes('rain')) return '🌧️';
-    if (lowerDesc.includes('snow')) return '🌨️';
-    if (lowerDesc.includes('mist') || lowerDesc.includes('fog')) return '🌫️';
-    if (lowerDesc.includes('clear')) return '☀️';
-    if (lowerDesc.includes('cloud')) return '☁️';
-
-    return '🌥️';
-  };
 
   // Get precipitation recommendation
   const getPrecipitationAdvice = (probability: number): string => {
@@ -118,13 +104,8 @@
 
         <!-- Weather Icon and Description -->
         <div class="text-center mb-4">
-          <div class="flex justify-center items-center gap-2">
-            <span class="text-2xl">{{ getWeatherIcon(day.description) }}</span>
-            <img
-              :src="`https://openweathermap.org/img/wn/${day.icon}@2x.png`"
-              :alt="day.description"
-              class="w-16 h-16"
-            />
+          <div class="flex justify-center items-center">
+            <span class="text-4xl">{{ day.icon }}</span>
           </div>
           <p class="text-sm text-gray-600 capitalize font-medium">
             {{ day.description }}

@@ -21,11 +21,9 @@
           class="flex flex-col items-center bg-white/30 rounded-lg p-4 min-w-[120px] transition-transform hover:scale-105"
         >
           <span class="text-gray-600 font-medium mb-2">{{ hour.time }}</span>
-          <img
-            :src="`https://openweathermap.org/img/wn/${hour.icon}.png`"
-            :alt="hour.description"
-            class="w-12 h-12"
-          />
+          <div class="text-3xl mb-2">
+            {{ hour.icon }}
+          </div>
           <span class="text-xl font-bold text-blue-700">
             {{ hour.temp }}{{ temperatureUnit }}
           </span>

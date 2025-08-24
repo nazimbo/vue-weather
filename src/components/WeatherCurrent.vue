@@ -60,11 +60,9 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
       <!-- Temperature and Icon -->
       <div class="flex items-center justify-center md:justify-start gap-4">
-        <img
-          :src="`https://openweathermap.org/img/wn/${store.weatherData.current.icon}@2x.png`"
-          :alt="store.weatherData.current.description"
-          class="w-24 h-24"
-        />
+        <div class="text-6xl">
+          {{ store.weatherData.current.icon }}
+        </div>
         <div>
           <div class="text-6xl font-extrabold text-blue-700">
             {{ formatters.temperature(store.weatherData.current.temp, store.selectedUnit) }}
