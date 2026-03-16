@@ -5,31 +5,24 @@
   const store = useWeatherStore();
 
   const temperatureUnit = computed(() => {
-    return store.selectedUnit === 'metric' ? '°C' : '°F';
+    return store.selectedUnit === 'metric' ? '°' : '°';
   });
 </script>
 
 <template>
-  <div v-if="store.weatherData?.hourlyForecast" class="bg-white/10 backdrop-blur-md rounded-3xl p-8 mb-12 shadow-2xl border border-white/20">
-    <h3 class="text-2xl font-semibold text-white mb-6 drop-shadow-lg">Next 24 Hours</h3>
+  <div v-if="store.weatherData?.hourlyForecast" class="glass rounded-2xl p-5 sm:p-6 animate-fade-up delay-100">
+    <h3 class="text-white/50 text-xs font-medium uppercase tracking-wider mb-4">Next 24 Hours</h3>
 
-    <div class="overflow-x-auto">
-      <div class="flex gap-6 min-w-max pb-2">
+    <div class="overflow-x-auto custom-scrollbar -mx-1 px-1 pb-2">
+      <div class="flex gap-2 min-w-max stagger">
         <div
-          v-for="hour in store.weatherData.hourlyForecast"
-          :key="hour.time"
-          class="flex flex-col items-center bg-white/20 backdrop-blur-sm rounded-2xl p-6 min-w-[140px] transition-all duration-300 hover:scale-110 hover:bg-white/30 border border-white/20 shadow-lg"
+          v-for="(hour, index) in store.weatherData.hourlyForecast"
+          :key="`${hour.time}-${index}`"
+          class="flex flex-col items-center rounded-xl px-4 py-3 min-w-[72px] hover:bg-white/5 transition-all duration-200 group"
         >
-          <span class="text-white/80 font-semibold mb-3 text-sm">{{ hour.time }}</span>
-          <div class="text-4xl mb-3 transform transition-transform hover:scale-110">
-            {{ hour.icon }}
-          </div>
-          <span class="text-xl font-bold text-white mb-2">
-            {{ hour.temp }}{{ temperatureUnit }}
-          </span>
-          <span class="text-xs text-white/70 capitalize text-center leading-tight">
-            {{ hour.description }}
-          </span>
+          <span class="text-white/35 text-[11px] font-medium mb-2">{{ hour.time }}</span>
+          <span class="text-2xl mb-2 group-hover:scale-110 transition-transform duration-200">{{ hour.icon }}</span>
+          <span class="text-white/90 text-sm font-medium">{{ hour.temp }}{{ temperatureUnit }}</span>
         </div>
       </div>
     </div>

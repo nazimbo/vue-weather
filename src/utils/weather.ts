@@ -4,7 +4,7 @@ export const formatters = {
   },
 
   windSpeed: (value: number, unit: 'metric' | 'imperial'): string => {
-    return `${value.toFixed(1)} ${unit === 'metric' ? 'm/s' : 'mph'}`;
+    return `${value.toFixed(1)} ${unit === 'metric' ? 'km/h' : 'mph'}`;
   },
 
   time: (timestamp: number): string => {
@@ -14,7 +14,10 @@ export const formatters = {
     });
   },
 
-  visibility: (meters: number): string => {
+  visibility: (meters: number, unit: 'metric' | 'imperial'): string => {
+    if (unit === 'imperial') {
+      return `${(meters / 1609.34).toFixed(1)} mi`;
+    }
     return `${(meters / 1000).toFixed(1)} km`;
   },
 };

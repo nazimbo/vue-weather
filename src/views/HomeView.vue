@@ -1,43 +1,64 @@
 <script setup lang="ts">
   import { defineAsyncComponent } from 'vue';
+  import { useWeatherStore } from '../stores/weatherStore';
   import WeatherSearch from '../components/WeatherSearch.vue';
   import WeatherCurrent from '../components/WeatherCurrent.vue';
 
-  // Lazy load heavier components
   const WeatherHourly = defineAsyncComponent(() => import('../components/WeatherHourly.vue'));
   const WeatherForecast = defineAsyncComponent(() => import('../components/WeatherForecast.vue'));
+
+  const store = useWeatherStore();
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto px-4 py-8">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
     <!-- Header -->
-    <header class="text-center mb-12">
-      <h1 class="text-5xl md:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4 drop-shadow-lg">
-        Weather App
-      </h1>
-      <p class="text-gray-300 text-lg md:text-xl font-light">Get detailed weather information for any location</p>
+    <header class="text-center mb-10 animate-fade-up">
+      <div class="inline-flex items-center gap-3 mb-3">
+        <span class="text-3xl sm:text-4xl animate-float">⛅</span>
+        <h1 class="text-3xl sm:text-4xl font-bold text-gradient tracking-tight">Weather</h1>
+      </div>
+      <p class="text-white/40 text-sm font-light tracking-wide">Real-time forecasts for any location</p>
     </header>
 
-    <!-- Search Component -->
+    <!-- Search -->
     <WeatherSearch />
 
-    <!-- Weather Information -->
+    <!-- Loading skeleton -->
+    <div v-if="store.loading && !store.weatherData" class="animate-fade-up delay-200 mt-10 space-y-6">
+      <div class="glass rounded-2xl p-8">
+        <div class="flex items-center gap-6">
+          <div class="w-20 h-20 rounded-2xl bg-white/5 shimmer"></div>
+          <div class="flex-1 space-y-3">
+            <div class="h-8 w-48 rounded-lg bg-white/5 shimmer"></div>
+            <div class="h-5 w-32 rounded-lg bg-white/5 shimmer"></div>
+            <div class="h-4 w-24 rounded-lg bg-white/5 shimmer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="glass rounded-2xl p-6 h-32 shimmer"></div>
+    </div>
+
+    <!-- Weather content -->
     <Suspense>
       <template #default>
-        <div>
+        <div v-if="store.weatherData" class="space-y-6 mt-8">
           <WeatherCurrent />
           <WeatherHourly />
           <WeatherForecast />
         </div>
       </template>
       <template #fallback>
-        <div class="text-center text-white/80 my-12">
-          <div
-            class="animate-spin rounded-full h-16 w-16 border-4 border-blue-400/30 border-t-blue-400 mx-auto mb-6 glow-animation"
-          ></div>
-          <p class="text-lg">Loading weather information...</p>
+        <div class="mt-10 text-center">
+          <div class="inline-block w-8 h-8 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin"></div>
         </div>
       </template>
     </Suspense>
+
+    <!-- Empty state -->
+    <div v-if="!store.loading && !store.weatherData && !store.error" class="mt-20 text-center animate-fade-up delay-300">
+      <div class="text-6xl mb-4 animate-float">🌍</div>
+      <p class="text-white/30 text-sm">Search for a city or use your location to get started</p>
+    </div>
   </div>
 </template>

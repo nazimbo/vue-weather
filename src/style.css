@@ -1,13 +1,36 @@
 @import 'tailwindcss';
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+/* ── Custom scrollbar ── */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
-@keyframes glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.6); }
+/* ── Keyframes ── */
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+  25% { transform: translate(40px, -30px) scale(1.08); opacity: 0.45; }
+  50% { transform: translate(-25px, 15px) scale(0.94); opacity: 0.25; }
+  75% { transform: translate(15px, 25px) scale(1.04); opacity: 0.4; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
 
 @keyframes shimmer {
@@ -15,34 +38,61 @@
   100% { background-position: 200% 0; }
 }
 
-.float-animation {
-  animation: float 6s ease-in-out infinite;
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
-.glow-animation {
-  animation: glow 4s ease-in-out infinite;
-}
+/* ── Utility classes ── */
+.animate-drift   { animation: drift 22s ease-in-out infinite; }
+.animate-fade-up { animation: fade-up 0.5s ease-out both; }
+.animate-float   { animation: float 5s ease-in-out infinite; }
+.animate-slide-in { animation: slide-in 0.3s ease-out both; }
 
-.shimmer-effect {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-500 { animation-delay: 0.5s; }
+.delay-700 { animation-delay: 0.7s; }
+.delay-1000 { animation-delay: 1s; }
+.delay-2000 { animation-delay: 2s; }
+.delay-3000 { animation-delay: 3s; }
+
+.shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.06) 50%, transparent 75%);
   background-size: 200% 100%;
-  animation: shimmer 2s infinite;
+  animation: shimmer 1.8s infinite;
 }
 
-.glass-morphism {
-  backdrop-filter: blur(20px);
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+/* ── Glass cards ── */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.text-shadow-glow {
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+.glass-strong {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
+/* ── Stagger children ── */
+.stagger > * { animation: fade-up 0.4s ease-out both; }
+.stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger > *:nth-child(2) { animation-delay: 0.10s; }
+.stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger > *:nth-child(4) { animation-delay: 0.20s; }
+.stagger > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger > *:nth-child(6) { animation-delay: 0.30s; }
+.stagger > *:nth-child(7) { animation-delay: 0.35s; }
 
-.animation-delay-4000 {
-  animation-delay: 4s;
+/* ── Gradient text ── */
+.text-gradient {
+  background: linear-gradient(135deg, #e0e7ff 0%, #a5b4fc 40%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

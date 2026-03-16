@@ -16,17 +16,24 @@
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-    <!-- Animated background elements -->
-    <div class="absolute inset-0 overflow-hidden">
-      <div class="absolute -inset-10 opacity-30">
-        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-        <div class="absolute top-3/4 right-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-2000"></div>
-        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-4000"></div>
+  <div class="min-h-screen bg-[#0a0e1a] relative overflow-hidden">
+    <!-- Ambient background -->
+    <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
+      <!-- Gradient base -->
+      <div class="absolute inset-0 bg-gradient-to-br from-indigo-950/80 via-[#0a0e1a] to-slate-950/80"></div>
+
+      <!-- Floating orbs -->
+      <div class="absolute w-[500px] h-[500px] -top-32 -left-32 rounded-full bg-indigo-600/20 blur-[120px] animate-drift"></div>
+      <div class="absolute w-[400px] h-[400px] top-1/3 -right-20 rounded-full bg-violet-600/15 blur-[100px] animate-drift delay-2000"></div>
+      <div class="absolute w-[350px] h-[350px] bottom-0 left-1/3 rounded-full bg-sky-600/10 blur-[100px] animate-drift delay-3000"></div>
+
+      <!-- Subtle grid overlay -->
+      <div class="absolute inset-0 opacity-[0.03]"
+        style="background-image: radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px); background-size: 40px 40px;">
       </div>
     </div>
-    
-    <!-- Main content -->
+
+    <!-- Content -->
     <div class="relative z-10">
       <HomeView />
       <DevTools />

@@ -4,163 +4,95 @@
 
   const store = useWeatherStore();
 
-  // Compute units based on store selection
   const temperatureUnit = computed(() => {
-    return store.selectedUnit === 'metric' ? '°C' : '°F';
+    return store.selectedUnit === 'metric' ? '°' : '°';
   });
 
   const windSpeedUnit = computed(() => {
-    return store.selectedUnit === 'metric' ? 'm/s' : 'mph';
+    return store.selectedUnit === 'metric' ? 'km/h' : 'mph';
   });
 
+  const formatDay = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-  // Format date to more readable format
-  const formatDate = (dateStr: string): string => {
-    try {
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) {
-        throw new Error('Invalid date');
-      }
-      return date.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      });
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Invalid Date';
-    }
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    if (date.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
+
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   };
 
-
-  // Get precipitation recommendation
-  const getPrecipitationAdvice = (probability: number): string => {
-    if (probability >= 70) return 'Bring an umbrella!';
-    if (probability >= 40) return 'Maybe bring an umbrella';
-    return 'Clear skies likely';
-  };
-
-  // Get wind condition description
   const getWindDescription = (speed: number): string => {
     if (store.selectedUnit === 'metric') {
-      if (speed < 0.5) return 'Calm';
-      if (speed < 1.5) return 'Light air';
-      if (speed < 3.3) return 'Light breeze';
-      if (speed < 5.5) return 'Gentle breeze';
-      if (speed < 7.9) return 'Moderate breeze';
-      if (speed < 10.7) return 'Fresh breeze';
-      return 'Strong breeze';
+      if (speed < 2) return 'Calm';
+      if (speed < 12) return 'Light';
+      if (speed < 29) return 'Moderate';
+      if (speed < 39) return 'Fresh';
+      return 'Strong';
     } else {
-      // Imperial units (mph)
       if (speed < 1) return 'Calm';
-      if (speed < 3) return 'Light air';
-      if (speed < 7) return 'Light breeze';
-      if (speed < 12) return 'Gentle breeze';
-      if (speed < 18) return 'Moderate breeze';
-      if (speed < 24) return 'Fresh breeze';
-      return 'Strong breeze';
+      if (speed < 7) return 'Light';
+      if (speed < 18) return 'Moderate';
+      if (speed < 24) return 'Fresh';
+      return 'Strong';
     }
   };
 </script>
 
 <template>
-  <div v-if="store.weatherData" class="mt-12">
-    <h3 class="text-3xl font-semibold text-white mb-8 text-center drop-shadow-lg">5-Day Forecast</h3>
+  <div v-if="store.weatherData" class="glass rounded-2xl p-5 sm:p-6 animate-fade-up delay-200">
+    <h3 class="text-white/50 text-xs font-medium uppercase tracking-wider mb-4">5-Day Forecast</h3>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+    <div class="divide-y divide-white/5 stagger">
       <div
-        v-for="day in store.weatherData.forecast"
+        v-for="(day, index) in store.weatherData.forecast"
         :key="day.date"
-        class="bg-white/10 backdrop-blur-md rounded-3xl p-6 shadow-2xl transition-all duration-300 hover:scale-105 hover:bg-white/15 border border-white/20 hover:border-white/40"
+        class="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0 hover:bg-white/[0.02] -mx-2 px-2 rounded-lg transition-colors duration-150"
       >
-        <!-- Date Header -->
-        <div class="text-center border-b border-white/30 pb-3 mb-4">
-          <p class="font-semibold text-white text-lg">
-            {{ formatDate(day.date) }}
-          </p>
+        <!-- Day name -->
+        <div class="w-24 sm:w-32 shrink-0">
+          <span class="text-white/80 text-sm font-medium">{{ formatDay(day.date) }}</span>
         </div>
 
-        <!-- Weather Icon and Description -->
-        <div class="text-center mb-4">
-          <div class="flex justify-center items-center">
-            <span class="text-4xl">{{ day.icon }}</span>
-          </div>
-          <p class="text-sm text-white/80 capitalize font-medium">
-            {{ day.description }}
-          </p>
+        <!-- Icon -->
+        <div class="text-2xl shrink-0 w-10 text-center">{{ day.icon }}</div>
+
+        <!-- Description -->
+        <div class="hidden sm:block flex-1 min-w-0">
+          <span class="text-white/40 text-xs truncate block">{{ day.description }}</span>
         </div>
 
-        <!-- Temperature Range -->
-        <div class="flex justify-center gap-4 mb-6 font-bold">
-          <div class="text-center">
-            <span class="text-red-300 text-sm block font-medium">High</span>
-            <span class="text-xl text-white">{{ day.tempMax }}{{ temperatureUnit }}</span>
-          </div>
-          <div class="text-white/50">|</div>
-          <div class="text-center">
-            <span class="text-blue-300 text-sm block font-medium">Low</span>
-            <span class="text-xl text-white">{{ day.tempMin }}{{ temperatureUnit }}</span>
-          </div>
+        <!-- Rain probability -->
+        <div class="shrink-0 w-14 text-right" v-if="day.precipitation > 0">
+          <span class="text-sky-400/70 text-xs font-medium">
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" class="inline mr-0.5 -mt-0.5"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+            {{ day.precipitation }}%
+          </span>
+        </div>
+        <div class="shrink-0 w-14" v-else></div>
+
+        <!-- Wind -->
+        <div class="hidden sm:block shrink-0 w-20 text-right">
+          <span class="text-white/30 text-xs">{{ getWindDescription(day.windSpeed) }}</span>
         </div>
 
-        <!-- Weather Details -->
-        <div class="grid grid-cols-2 gap-3 text-sm border-t border-white/30 pt-4">
-          <!-- Humidity -->
-          <div class="text-center">
-            <span class="text-white/70 block font-medium">Humidity</span>
-            <div class="font-semibold flex items-center justify-center gap-1 text-white">
-              <span>💧</span>
-              <span>{{ day.humidity }}%</span>
-            </div>
+        <!-- Temp range bar -->
+        <div class="shrink-0 flex items-center gap-2 w-36 sm:w-44 justify-end">
+          <span class="text-white/40 text-sm w-10 text-right font-medium">{{ day.tempMin }}{{ temperatureUnit }}</span>
+          <div class="w-16 sm:w-20 h-1 rounded-full bg-white/5 relative overflow-hidden">
+            <div
+              class="absolute inset-y-0 rounded-full bg-gradient-to-r from-indigo-400/60 to-amber-400/60"
+              :style="{
+                left: '10%',
+                right: '10%',
+              }"
+            ></div>
           </div>
-
-          <!-- Wind -->
-          <div class="text-center">
-            <span class="text-white/70 block font-medium">Wind</span>
-            <div class="font-semibold flex items-center justify-center gap-1 text-white">
-              <span>💨</span>
-              <span>{{ day.windSpeed }} {{ windSpeedUnit }}</span>
-            </div>
-          </div>
-
-          <!-- Precipitation -->
-          <div class="col-span-2 text-center mt-3">
-            <span class="text-white/70 block font-medium">Rain Chance</span>
-            <div class="font-semibold flex items-center justify-center gap-1 text-white">
-              <span>🌧️</span>
-              <span>{{ day.precipitation }}%</span>
-            </div>
-            <p class="text-xs text-white/60 mt-1">
-              {{ getPrecipitationAdvice(day.precipitation) }}
-            </p>
-          </div>
-
-          <!-- Wind Description -->
-          <div class="col-span-2 text-center mt-2">
-            <p class="text-xs text-white/60 italic">
-              {{ getWindDescription(day.windSpeed) }}
-            </p>
-          </div>
+          <span class="text-white/80 text-sm w-10 font-medium">{{ day.tempMax }}{{ temperatureUnit }}</span>
         </div>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-  /* Optional: Add smooth transitions for hover effects */
-  .hover\:scale-105 {
-    transition:
-      transform 0.2s ease-in-out,
-      box-shadow 0.2s ease-in-out;
-  }
-
-  /* Optional: Add subtle animation for weather icons */
-  img {
-    transition: transform 0.2s ease-in-out;
-  }
-
-  img:hover {
-    transform: scale(1.1);
-  }
-</style>

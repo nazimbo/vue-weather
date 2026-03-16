@@ -16,7 +16,6 @@ export interface WeatherData {
     sunrise: number;
     sunset: number;
     pressure: number;
-    visibility: number;
     uvIndex?: number;
     airQuality?: {
       aqi: number;
@@ -52,7 +51,6 @@ export interface CacheEntry {
   data: WeatherData;
   timestamp: number;
   lastAccessed: number;
-  compressed: string;
 }
 
 export interface WeatherState {
@@ -77,7 +75,6 @@ interface ProcessedForecast {
   tempMax: number;
   description: string;
   icon: string;
-  humidity: number;
   windSpeed: number;
   precipitation: number;
 }

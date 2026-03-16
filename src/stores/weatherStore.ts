@@ -8,7 +8,6 @@ import type {
   CacheEntry,
 } from '../types/weather';
 import { WeatherErrorType } from '../types/weather';
-import { compress } from 'lz-string';
 
 const FAVORITES_STORAGE_KEY = 'weather-favorites';
 const UNITS_STORAGE_KEY = 'weather-units';
@@ -394,7 +393,6 @@ export const useWeatherStore = defineStore('weather', {
           tempMax,
           description: weatherInfo.description,
           icon: weatherInfo.icon,
-          humidity: data.current.relative_humidity_2m || 0, // Use current humidity as daily average
           windSpeed: data.daily.wind_speed_10m_max[index] || 0,
           precipitation: Math.round(data.daily.precipitation_probability_max[index] || 0),
         };
@@ -431,7 +429,6 @@ export const useWeatherStore = defineStore('weather', {
           sunrise: new Date(data.daily.sunrise[0]).getTime() / 1000,
           sunset: new Date(data.daily.sunset[0]).getTime() / 1000,
           pressure: Math.round(data.current.surface_pressure),
-          visibility: 10000, // Open-Meteo doesn't provide visibility, use default 10km
           uvIndex: undefined,
           airQuality: airQualityResponse
             ? {
@@ -476,7 +473,6 @@ export const useWeatherStore = defineStore('weather', {
           data: processedData,
           timestamp: Date.now(),
           lastAccessed: Date.now(),
-          compressed: compress(JSON.stringify(processedData)),
         });
 
         this.weatherData = processedData;
@@ -505,13 +501,15 @@ export const useWeatherStore = defineStore('weather', {
     },
 
     async toggleUnit() {
+      const previousUnit = this.selectedUnit;
+      const previousWeatherData = this.weatherData;
+      const previousCache = new Map(this.cache);
+
       try {
-        this.loading = true; // Set loading state
+        this.loading = true;
 
-        // Update the unit
-        const newUnit = this.selectedUnit === 'metric' ? 'imperial' : 'metric';
+        const newUnit = previousUnit === 'metric' ? 'imperial' : 'metric';
 
-        // Store new unit first to ensure consistency
         localStorage.setItem(UNITS_STORAGE_KEY, newUnit);
         this.selectedUnit = newUnit;
 
@@ -519,19 +517,19 @@ export const useWeatherStore = defineStore('weather', {
         this.clearCache();
 
         // Refresh weather data if available
-        if (this.weatherData) {
-          const { lat, lon } = this.weatherData.coord;
+        if (previousWeatherData) {
+          const { lat, lon } = previousWeatherData.coord;
           await this.fetchWeatherData({ lat, lon });
         }
       } catch (error) {
-        // Handle error and restore previous unit if needed
         console.error('Error toggling unit:', error);
         this.error = this.handleError(error);
 
-        // Restore previous unit
-        const previousUnit = this.selectedUnit === 'metric' ? 'imperial' : 'metric';
+        // Restore previous state
         localStorage.setItem(UNITS_STORAGE_KEY, previousUnit);
         this.selectedUnit = previousUnit;
+        this.cache = previousCache;
+        this.weatherData = previousWeatherData;
       } finally {
         this.loading = false;
       }
