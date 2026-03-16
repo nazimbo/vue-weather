@@ -34,7 +34,7 @@ This is a real-time weather application built with Vue.js 3, TypeScript, and Tai
 - **Frontend:**
   - Framework: Vue.js 3
   - State Management: Pinia
-  - Styling: Tailwind CSS
+  - Styling: Tailwind CSS v4
   - API Integration: Axios
   - Utility library: @vueuse/core
 - **Backend Services:**
@@ -132,7 +132,7 @@ This is a real-time weather application built with Vue.js 3, TypeScript, and Tai
 - **Request Cancellation:** Search suggestions automatically cancel previous requests when typing rapidly.
 - **Throttling:** Weather API calls are throttled (1 second) to prevent excessive requests.
 - **Retry Logic:** Failed requests are automatically retried up to 3 times for server errors.
-- **Compressed Storage:** Cache entries are compressed using LZ-string for memory efficiency.
+- **Lazy Loading:** Heavy components (hourly forecast, 5-day forecast) are loaded asynchronously.
 
 ## Validation and Error Handling
 
