@@ -8,10 +8,6 @@
     return store.selectedUnit === 'metric' ? '°' : '°';
   });
 
-  const windSpeedUnit = computed(() => {
-    return store.selectedUnit === 'metric' ? 'km/h' : 'mph';
-  });
-
   const formatDay = (dateStr: string): string => {
     const date = new Date(dateStr);
     const today = new Date();
@@ -47,7 +43,7 @@
 
     <div class="divide-y divide-white/5 stagger">
       <div
-        v-for="(day, index) in store.weatherData.forecast"
+        v-for="day in store.weatherData.forecast"
         :key="day.date"
         class="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0 hover:bg-white/[0.02] -mx-2 px-2 rounded-lg transition-colors duration-150"
       >
